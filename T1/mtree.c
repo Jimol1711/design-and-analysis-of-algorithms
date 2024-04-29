@@ -2,30 +2,30 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define B 128 // Si B no es fijo, esto debe cambiar (aun no caxo bien como se calcula xd)
+#define B 128 // Tamaño de B calculado
 
 // Forward declaration of Node
 typedef struct Node Node;
 
-// Estructura de un punto
+// Structure of a point
 typedef struct {
     double x, y;
-} Punto;
+} Point;
 
-// Estructura de una entrada (entry)
+// Structure of an entry
 typedef struct {
-    Punto p; // punto
-    double cr; // radio cobertor
-    Node *a; // dir. en disco a la pagina de su hijo
+    Point p; // point
+    double cr; // cover radio
+    Node *a; // disk address to the child node
 } Entry;
 
 struct Node {
     Entry entrys[B];
 };
 
-// Estructura de una Query para busqueda de entrys en un nodo
+// Structure of a query to search points in a Mtree
 typedef struct {
-    Punto q;
+    Point q;
     double r;
 } Query;
 
@@ -34,25 +34,25 @@ typedef struct {
     ;
 } Mtree;
 
-// Función que calcula la distancia euclidiana entre dos puntos
-double euclidian_distance(Punto p1, Punto p2) {
+// Function that calculates the Euclidean distance between two points
+double euclidian_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 }
 
-// Función que crea un nodo.
-// hay que ver bien si es correcto que parta con ese tamaño o parte de tamaño 0 y aumenta al agregarle entradas.
+// Function that creates a node
+// hay que ver bien si es correcto que parta con ese tamano o parte de tamano 0 y aumenta al agregarle entradas.
 Node* create_node() {
     Node* node = (Node*)malloc(sizeof(Node));
     return node;
 }
 
 
-// Función que dice si un nodo es una hoja o no.
+// Function that tells whether a node is a leaf or not.
 // Hay que revisar bien la condicion de cuándo un nodo es hoja, quizas la condicion podría relajarse.
 int is_leaf(Node* node) {
-    int num_entrys = sizeof(node) / sizeof(Entry); // Número de entradas del nodo
-    Entry* entrys = node->entrys; // Arreglo de Entry del nodo
-    // Para cada entrada, si alguna tiene 'cr' o 'a' no nulos, entonces no es una hoja
+    int num_entrys = sizeof(node) / sizeof(Entry); // number of entries in the node
+    Entry* entrys = node->entrys; // node Entry array
+    // For each entry, if any has 'cr' or 'a' non-nulls, so the node is not a leaf
     for (int i=0; i < num_entrys; i++) {
         if (entrys[i].cr != 0.0 || entrys[i].a != NULL)
             return 0;
@@ -60,40 +60,43 @@ int is_leaf(Node* node) {
     return 1;
 }
 
-// Función auxiliar que agrega las soluciones (puntos) que cumplen la condicion de una entrada de un nodo
-void range_search(Node* node, Query Q, Punto** arreglo, int* tamaño) {
-    Punto q = Q.q; // punto de la query
-    double r = Q.r; // radio de la query
-    int num_entrys = sizeof(node) / sizeof(Entry); // numero de entradas en el nodo
-    Entry* entrys = node->entrys; // arreglo de entradas del nodo
+// Auxiliary function that adds the solutions (points) that satisfy the condition in a node entry
+void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
+    Point q = Q.q; // query point
+    double r = Q.r; // query radio
+    int num_entrys = sizeof(node) / sizeof(Entry); // number of entries in the node
+    Entry* entrys = node->entrys; // node Entry array
 
-    // Si el nodo es hoja, buscamos en cada entrada si cumplen con la condicion.
-    // si la entrada la cumple, aumentamos el largo del arreglo y agregamos el punto de la entrada.
+    // If the node is a leaf, search each entry that satisfy the condition of distance.
+    // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
     if (is_leaf(node)) {
         for (int i=0; i<num_entrys; i++) {
             if(euclidian_distance(entrys[i].p, q) <= r) {
-                *arreglo = (Punto*)realloc(*arreglo, (*tamaño) + 1 * sizeof(Punto));
-                (*arreglo)[*tamaño] = q;
-                (*tamaño)++;
+                *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
+                (*sol_array)[*array_size] = q;
+                (*array_size)++;
             }
         }
     }
-    // Si no es hoja, para cada entrada, si cumple la condicion de distancia bajamos a revisar en su nodo hijo 'a'
+    // if is not a leaf, for each entry, if satisfy this distance condition go down to check its child node 'a'
     else {
         for (int i=0; i<num_entrys; i++) {
-            if(euclidian_distance(entrys[i].p, q) <= entrys[i].cr + r)
-                range_search(entrys[i].a, Q, arreglo, tamaño);
+            if(euclidian_distance(entrys[i].p, q) <= entrys[i].cr + r){
+                (*disk_accesses)++;
+                range_search(entrys[i].a, Q, sol_array, array_size, disk_accesses);
+            }
         }
     }
 }
 
-// Función que busca los puntos que viven dentro de la bola especificada en la query.
-Punto* search_points_in_radio(Node* node, Query Q) {
-    Punto* arreglo = NULL; // inicializamos arreglo de puntos como nulo
-    int tamaño = 0; // el tamaño del arreglo comienza en cero (no hay puntos inicialmente)
+// Function that search the points that lives inside the ball specified in the query
+Point* search_points_in_radio(Node* node, Query Q) {
+    Point* sol_array = NULL; // Initialize the solutions array as null
+    int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
+    int disk_accesses = 1; // Disk accesses count. Starts in 1 because we start to search in the node inmediately
 
-    range_search(node, Q, &arreglo, &tamaño); // ocupamos la funcion auxiliar que hace todo el trabajo
-    return arreglo; // retornamos el arreglo con los puntos encontrados que cumplian la condicion
+    range_search(node, Q, &sol_array, &array_size, &disk_accesses); // We occupy the range_search auxiliar function
+    return sol_array; // return the array solutions with the points found
     
 }
 
@@ -101,8 +104,8 @@ void main() {
     // Para compilar: gcc mtree.c -o mtree -lm
     // Para ejecutar: ./mtree
 
-    // Determinar tamaño de B
-    printf("Tamaño de entrada: %i\n", sizeof(Entry));
-    printf("Tamaño de B sería: %d\n", 4096 / sizeof(Entry));
+    // Determinar tamano de B
+    printf("tamano de entrada: %i\n", sizeof(Entry));
+    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
 
 }
