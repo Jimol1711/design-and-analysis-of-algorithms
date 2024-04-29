@@ -2,13 +2,15 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define B 100 // Si B no es fijo, esto debe cambiar (aun no caxo bien como se calcula xd)
+#define B 128 // Si B no es fijo, esto debe cambiar (aun no caxo bien como se calcula xd)
+
+// Forward declaration of Node
+typedef struct Node Node;
 
 // Estructura de un punto
 typedef struct {
     double x, y;
 } Punto;
-
 
 // Estructura de una entrada (entry)
 typedef struct {
@@ -17,12 +19,9 @@ typedef struct {
     Node *a; // dir. en disco a la pagina de su hijo
 } Entry;
 
-
-// Estructura de un nodo. 
-typedef struct {
-    Entry entrys[B]; // está bien este 'B' ?
-} Node;
-
+struct Node {
+    Entry entrys[B];
+};
 
 // Estructura de una Query para busqueda de entrys en un nodo
 typedef struct {
@@ -30,12 +29,15 @@ typedef struct {
     double r;
 } Query;
 
-
 // Probablemente para mas adelante...
 typedef struct {
     ;
 } Mtree;
 
+// Función que calcula la distancia euclidiana entre dos puntos
+double euclidian_distance(Punto p1, Punto p2) {
+    return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
+}
 
 // Función que crea un nodo.
 // hay que ver bien si es correcto que parta con ese tamaño o parte de tamaño 0 y aumenta al agregarle entradas.
@@ -57,7 +59,6 @@ int is_leaf(Node* node) {
     }
     return 1;
 }
-
 
 // Función auxiliar que agrega las soluciones (puntos) que cumplen la condicion de una entrada de un nodo
 void range_search(Node* node, Query Q, Punto** arreglo, int* tamaño) {
@@ -86,7 +87,6 @@ void range_search(Node* node, Query Q, Punto** arreglo, int* tamaño) {
     }
 }
 
-
 // Función que busca los puntos que viven dentro de la bola especificada en la query.
 Punto* search_points_in_radio(Node* node, Query Q) {
     Punto* arreglo = NULL; // inicializamos arreglo de puntos como nulo
@@ -97,16 +97,12 @@ Punto* search_points_in_radio(Node* node, Query Q) {
     
 }
 
-
-// Funcioón que calcula la distancia euclidiana entre dos puntos
-double euclidian_distance(Punto p1, Punto p2) {
-    return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
-}
-
-
-
-
-
 void main() {
-    printf("%s\n", "hola");
+    // Para compilar: gcc mtree.c -o mtree -lm
+    // Para ejecutar: ./mtree
+
+    // Determinar tamaño de B
+    printf("Tamaño de entrada: %i\n", sizeof(Entry));
+    printf("Tamaño de B sería: %d\n", 4096 / sizeof(Entry));
+
 }
