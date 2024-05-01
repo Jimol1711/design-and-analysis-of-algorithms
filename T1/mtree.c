@@ -2,37 +2,36 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "mtree.h"
+
 #define B 128 // Tamaño de B calculado
 
-// Forward declaration of Node
-typedef struct Node Node;
-
 // Structure of a point
-typedef struct {
+struct point {
     double x, y;
-} Point;
+};
 
 // Structure of an entry
-typedef struct {
+struct entry {
     Point p; // point
     double cr; // cover radio
     Node *a; // disk address to the child node
-} Entry;
+};
 
-struct Node {
+struct node {
     Entry entrys[B];
 };
 
 // Structure of a query to search points in a Mtree
-typedef struct {
+struct query {
     Point q;
     double r;
-} Query;
+};
 
 // Probablemente para mas adelante...
-typedef struct {
+struct mtree {
     ;
-} Mtree;
+};
 
 // Function that calculates the Euclidean distance between two points
 double euclidian_distance(Point p1, Point p2) {
