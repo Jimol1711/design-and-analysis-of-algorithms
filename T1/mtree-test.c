@@ -1,16 +1,31 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 #include "mtree.h"
 #include "cp.h"
 #include "ss.h"
 
+double random_double() {
+    return (double)rand() / RAND_MAX;
+}
+
 int main() {
+
+    Point *P = malloc(25);
+
+    // Seed the random number generator
+    srand(time(NULL));
+
     // Create a root node for the M-tree
     Node* root = create_node();
 
     // Create some points for testing
-    Point p1 = {1.0, 1.0};
-    Point p2 = {2.0, 2.0};
-    Point p3 = {3.0, 3.0};
-    Point p4 = {4.0, 4.0};
+    Point p1 = {random_double(), random_double()};
+    Point p2 = {random_double(), random_double()};
+    Point p3 = {random_double(), random_double()};
+    Point p4 = {random_double(), random_double()};
 
     // Insert entries into the root node
     root->entrys[0].p = p1;
@@ -32,6 +47,10 @@ int main() {
 
     // Search points within the specified radius
     Point* result = search_points_in_radio(root, query);
+
+    for (int i = 10; i < 25; i++) {
+        
+    }
 
     // Print the points found
     printf("Points within the radius:\n");

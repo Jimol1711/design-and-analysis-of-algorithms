@@ -1,3 +1,7 @@
+// ==================================
+// Funciones y estructuras del M-Tree
+// ==================================
+
 typedef struct node Node;
 typedef struct point Point;
 typedef struct entry Entry;
