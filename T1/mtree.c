@@ -6,7 +6,7 @@
 
 #include "mtree.h"
 
-#define B 128 // Tamaño de B calculado
+#define B 128
 
 // Structure of a point
 struct point {
@@ -16,32 +16,31 @@ struct point {
 // Structure of an entry
 struct entry {
     Point p; // point
-    double cr; // cover radio
-    Node *a; // disk address to the child node
+    double cr; // covering radius
+    Node *a; // disk address to the root of the covering tree
 };
 
+// Structure of a Node
 struct node {
     Entry entries[B];
     int size;
 };
 
-// Structure of a query to search points in a Mtree
+// Structure of a query to search points in an Mtree
 struct query {
     Point q;
     double r;
 };
 
-// Function that calculates the Euclidean distance between two points
+// Function that calculates the Euclidean distance between two points p1 and p2
 double euclidean_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 }
 
 // Function that tells whether a node is a leaf or not.
-// Hay que revisar bien la condicion de cuándo un nodo es hoja, quizas la condicion podría relajarse.
 int is_leaf(Node* node) {
-    int num_entries = sizeof(node) / sizeof(Entry); // number of entries in the node
-    Entry* entries = node->entries; // node Entry array
-    // For each entry, if any has 'cr' or 'a' non-nulls, so the node is not a leaf
+    int num_entries = sizeof(node) / sizeof(Entry);
+    Entry* entries = node->entries;
     for (int i=0; i < num_entries; i++) {
         if (entries[i].cr != 0.0 || entries[i].a != NULL)
             return 0;
@@ -50,14 +49,11 @@ int is_leaf(Node* node) {
 }
 
 void covering_radius(Node *node) {
-
     if (is_leaf(node)) {
-        // If the node is a leaf, set cr to NULL for simplicity
         for (int i = 0; i < node->size; i++) {
             node->entries[i].cr = 0.0;
         }
     } else {
-        // If the node is not a leaf, calculate the covering radius for each entry
         for (int i = 0; i < node->size; i++) {
             double max_distance = 0.0;
             for (int j = 0; j < node->size; j++) {
@@ -72,7 +68,6 @@ void covering_radius(Node *node) {
 }
 
 // Function that creates a node
-// hay que ver bien si es correcto que parta con ese tamano o parte de tamano 0 y aumenta al agregarle entradas.
 Node* create_node() {
     Node* node = (Node*)malloc(B * sizeof(Entry));
     covering_radius(node);
