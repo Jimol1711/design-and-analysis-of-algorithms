@@ -13,53 +13,66 @@ double random_double() {
 
 int main() {
 
-    Point *P = malloc(25);
+    // Para compilar: gcc mtree.c -o mtree -lm
+    // Para ejecutar: ./mtree
+
+    // Test para la búsqueda (crear árbol y query, ver que devuelva los puntos en la query)
+
+    // Crear set de puntos P para cada n entre 2**10 y 2**25 y set de consultas Q con 100 puntos
+
+    // Test de cp (contar accesos a disco en árbol construido con cp para n puntos, con n
+    // entre 2**10 y 2**25)
+
+    // Test de ss (contar accesos a disco en árbol construido con ss para n puntos, con n
+    // entre 2**10 y 2**25)
+
+    // Determinar tamano de B
+    printf("tamano de entrada: %i\n", sizeof(Entry));
+    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
 
     // Seed the random number generator
     srand(time(NULL));
 
-    // Create a root node for the M-tree
-    Node* root = create_node();
+    // Creation of query set Q
+    Query Q[100];
 
-    // Create some points for testing
-    Point p1 = {random_double(), random_double()};
-    Point p2 = {random_double(), random_double()};
-    Point p3 = {random_double(), random_double()};
-    Point p4 = {random_double(), random_double()};
+    for (int i = 0; i < 100; i++) {
+        Point p;
+        p.x = random_double();
+        p.y = random_double();
 
-    // Insert entries into the root node
-    root->entrys[0].p = p1;
-    root->entrys[0].cr = 1.0;
-    root->entrys[0].a = create_node();
-
-    root->entrys[1].p = p2;
-    root->entrys[1].cr = 1.5;
-    root->entrys[1].a = create_node();
-
-    root->entrys[2].p = p3;
-    root->entrys[2].cr = 2.0;
-    root->entrys[2].a = create_node();
-
-    // Create a query
-    Query query;
-    query.q = p1;  // Query point
-    query.r = 1.5; // Query radius
-
-    // Search points within the specified radius
-    Point* result = search_points_in_radio(root, query);
-
-    for (int i = 10; i < 25; i++) {
-        
+        Q[i].q = p;
+        Q[i].r = 0.02;
     }
 
-    // Print the points found
-    printf("Points within the radius:\n");
-    for (int i = 0; result[i].x != 0 || result[i].y != 0; ++i) {
-        printf("Point %d: (%.2f, %.2f)\n", i + 1, result[i].x, result[i].y);
+    for (int i = 0; i < 100; i++) {
+        printf("Query %d - Point: (%lf, %lf)\n", i + 1, Q[i].q.x, Q[i].q.y);
     }
 
-    // Free the memory allocated for the result array
-    free(result);
+    // Puntos para testing de los métodos
+    int point_nums[16];
+    for (int i = 0; i < 16; i++) {
+        point_nums[i] = power_of_two(i + 10);
+    }
+
+    Point *P[16];
+
+    for (int i = 0; i < 16; i++) {
+        P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
+        for (int j = 0; j < point_nums[i]; j++) {
+            P[i][j].x = random_double();
+            P[i][j].y = random_double();
+        }
+    }
+
+    // Imprimimos número de puntos para cada experimento
+    for (int i = 0; i < 16; i++) {
+        printf("Array %i size: %i\n", i+1, point_nums[i]);
+    }
+
+    for (int i = 0; i < 16; i++) {
+        free(P[i]);
+    }
 
     return 0;
 }

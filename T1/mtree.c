@@ -114,13 +114,23 @@ Point* search_points_in_radio(Node* node, Query Q) {
     
 }
 
+// De aquí en adelante es mtree-test.c
 // Function that returns a random double value between 0 and 1
 double random_double() {
     return (double)rand() / RAND_MAX;
 }
 
-// Function to generate a set of 2^10 random points in C
-void generate_points(struct point P[], int totalPoints) {
+int power_of_two(int exponent) {
+    int result = 1;
+    for (int i = 0; i < exponent; i++) {
+        result *= 2;
+    }
+    return result;
+}
+
+// Function to generate a set of totalPoints random points in C
+void generate_points(Point P[], int totalPoints) {
+    P = malloc(totalPoints);
     for (int i = 0; i < totalPoints; i++) {
         P[i].x = random_double();
         P[i].y = random_double();
@@ -149,10 +159,45 @@ int main() {
     // Seed the random number generator
     srand(time(NULL));
 
-    for (int i = 10; i < 25; i++) {
-        int totalPoints = pow(2, i);
-        struct point P[totalPoints];
-        generate_points(P, totalPoints);
+    // Creation of query set Q
+    Query Q[100];
+
+    for (int i = 0; i < 100; i++) {
+        Point p;
+        p.x = random_double();
+        p.y = random_double();
+
+        Q[i].q = p;
+        Q[i].r = 0.02;
+    }
+
+    for (int i = 0; i < 100; i++) {
+        printf("Query %d - Point: (%lf, %lf)\n", i + 1, Q[i].q.x, Q[i].q.y);
+    }
+
+    // Puntos para testing de los métodos
+    int point_nums[16];
+    for (int i = 0; i < 16; i++) {
+        point_nums[i] = power_of_two(i + 10);
+    }
+
+    Point *P[16];
+
+    for (int i = 0; i < 16; i++) {
+        P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
+        for (int j = 0; j < point_nums[i]; j++) {
+            P[i][j].x = random_double();
+            P[i][j].y = random_double();
+        }
+    }
+
+    // Imprimimos número de puntos para cada experimento
+    for (int i = 0; i < 16; i++) {
+        printf("Array %i size: %i\n", i+1, point_nums[i]);
+    }
+
+    for (int i = 0; i < 16; i++) {
+        free(P[i]);
     }
 
     return 0;
