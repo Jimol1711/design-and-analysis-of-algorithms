@@ -120,6 +120,7 @@ double random_double() {
     return (double)rand() / RAND_MAX;
 }
 
+// Function that returns two to the exponent
 int power_of_two(int exponent) {
     int result = 1;
     for (int i = 0; i < exponent; i++) {
@@ -181,19 +182,22 @@ int main() {
         point_nums[i] = power_of_two(i + 10);
     }
 
+    // Imprimimos número de puntos para cada experimento
+    for (int i = 0; i < 16; i++) {
+        printf("Array %i size: %i\n", i+1, point_nums[i]);
+    }
+
     Point *P[16];
 
     for (int i = 0; i < 16; i++) {
+        if (i == 1) {
+            break;
+        }
         P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
         for (int j = 0; j < point_nums[i]; j++) {
             P[i][j].x = random_double();
             P[i][j].y = random_double();
         }
-    }
-
-    // Imprimimos número de puntos para cada experimento
-    for (int i = 0; i < 16; i++) {
-        printf("Array %i size: %i\n", i+1, point_nums[i]);
     }
 
     for (int i = 0; i < 16; i++) {
