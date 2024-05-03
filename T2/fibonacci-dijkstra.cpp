@@ -118,9 +118,9 @@ class FibHeap {
          * Función que consolida los nodos del Heap de Fibonacci
          */
         void consolidate() {
-            int max_degree = static_cast<int>(floor(log(static_cast<double>(n)) / log(static_cast<double>(1 + sqrt(static_cast<double>(5))) / 2)));
-            FibNode** A = new FibNode * [max_degree + 2];
-            std::fill_n(A, max_degree + 2, nullptr);
+
+            int Dn = static_cast<int>(log2(n)) + 1;
+            std::vector<FibNode*> A(Dn + 2, nullptr);
 
             FibNode* w = min;
             int rootSize = 0;
@@ -130,7 +130,7 @@ class FibHeap {
                 next = next->right;
             } while (next != w);
 
-            FibNode** rootList = new FibNode * [rootSize];
+            std::vector<FibNode*> rootList(rootSize);
             for (int i = 0; i < rootSize; i++) {
                 rootList[i] = next;
                 next = next->right;
@@ -144,9 +144,7 @@ class FibHeap {
                 while (A[d] != nullptr) {
                     FibNode* y = A[d];
                     if (y->key < x->key) {
-                        FibNode* temp = x;
-                        x = y;
-                        y = temp;
+                        std::swap(x, y);
                     }
                     fibHeapLink(y, x);
                     A[d] = nullptr;
@@ -154,16 +152,14 @@ class FibHeap {
                 }
                 A[d] = x;
             }
-            delete[] rootList;
 
             min = nullptr;
 
-            for (int i = 0; i < max_degree + 2; i++) {
+            for (int i = 0; i < Dn + 2; i++) {
                 if (A[i] != nullptr) {
                     if (min == nullptr) {
                         min = A[i]->left = A[i]->right = A[i];
-                    }
-                    else {
+                    } else {
                         min->left->right = A[i];
                         A[i]->left = min->left;
                         min->left = A[i];
@@ -174,7 +170,6 @@ class FibHeap {
                     }
                 }
             }
-            delete[] A;
         }
 
         /*
@@ -324,7 +319,7 @@ void dijkstraFibonacci(Graph& graph, int start) {
         }
     }
 
-    #if 1
+    #if 0
     cout << "Distancias desde el nodo " << start + 1 << ":\n";
     for (int i = 0; i < n; ++i) {
         cout << "Distancia al nodo " << i + 1 << ": " << dist[i] << "\n";
