@@ -1,3 +1,6 @@
+#ifndef MTREE_H
+#define MTREE_H
+
 // ==================================
 // Funciones y estructuras del M-Tree
 // ==================================
@@ -9,3 +12,5 @@ typedef struct query Query;
 typedef struct mtree Mtree;
 Node* create_node();
 Point *search_points_in_radio(Node *node, Query query);
+
+#endif
