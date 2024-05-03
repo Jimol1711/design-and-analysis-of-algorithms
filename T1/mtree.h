@@ -43,7 +43,7 @@ typedef struct {
     Point point;
     Point* sample_subset;
     int subset_size;
-} SampleSubset;
+} SubsetStructure;
 
 // Function that calculates the Euclidean distance between two points
 double euclidian_distance(Point p1, Point p2) {
