@@ -25,10 +25,17 @@ Point* getSamples(Point* point_set, int set_size, int sample_size) {
     return samples; // return the samples array
 }
 
+// Function that delete an element from an array
 void deleteElemenFromArray(Point** array, int index, int array_size) {
     for (int i=index; i < array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
+}
+
+// Function that insert an entry into the entries array of a node
+void insertEntry(Node* node, Entry entry) {
+    node->entries[node->num_entries] = entry;
+    (node->num_entries)++;
 }
 
 Node* cpBulkLoading(Point* point_set, int set_size) {
@@ -45,7 +52,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
             newEntry.cr = 0.0; 
             newEntry.a = NULL;
             // Add the Entry structure into the 'entries' array of the created node
-            newNode->entries[i] = newEntry;
+            insertEntry(newNode, newEntry);
         }
         return newNode;
     }
@@ -137,20 +144,39 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
         // STEP 6
         Node* T = create_node();
 
-        for (int i = 0; i < sample_size; i++) {
+        for (int j = 0; j < sample_size; j++) {
             // Recursively call cpBulkLoading for each subset F_j
-            if (samples_subsets[i].subset_size > 0) {
-                Node* sub_tree = CP(samples_subsets[i].sample_subset, samples_subsets[i].subset_size);
-                Entry entry;
-                entry.p = F[i];
-                entry.cr = 0.0; // Initial cover radio
-                entry.a = sub_tree;
-                (T->entries)[T->num_entries] = entry;
-                T->num_entries++;
+            if (samples_subsets[j].subset_size > 0) {
+                Node* root = CP(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
+
+                // STEP 7
+                // if root size is less than b
+                if (root->num_entries < b) {
+                    deleteElemenFromArray(&F, j, sample_size); // delete p_fj from F
+                    eleteElemenFromArray(&samples_subsets, j, sample_size); // delete the sample point subset too?
+                    sample_size--; // F size is reduced
+
+                    // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
+                    Entry *root_entries = root->entries; // Entry array of the root
+                    // for each entry of the root, add the entry to the main node T
+                    for (int p=0; p < root->num_entries; p++) {
+                        Entry root_entry = root_entries[p];
+                        insertEntry(T, root_entry);
+                    }
+                }
+
+                // if root size is greater than or equal to b: Add the root to the main node T
+                else {
+                    Entry entry = {F[j], 0.0, root};
+                    insertEntry(T, entry);
+                }
+
             }
         }
 
-        // STEP 7: if the root of the tree is less than b ...
+       
+
+        
     }
 
 
