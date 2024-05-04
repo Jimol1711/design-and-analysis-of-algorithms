@@ -112,6 +112,33 @@ ClusterStruct merge_clusters(ClusterStruct c1, ClusterStruct c2) {
     return merged_cluster;
 }
 
+// Función que encuentra el par más cercano en un set de clusters, retorna arreglo con los dos clusters
+ClustersArray closest_pair(ClustersArray clustersSet) {
+
+    ClustersArray closest_pair;
+    closest_pair.size = 2;
+    closest_pair.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
+    
+    ClusterStruct c1;
+    ClusterStruct c2;
+    double min_dist = DBL_MAX;
+
+    for (int i = 0; i < clustersSet.size; i++) {
+        for (int j = 0; j < clustersSet.size; j++) {
+            if (i == j) {
+                continue;
+            }
+            double dist = clusterDist(clustersSet.self[i], clustersSet.self[j]);
+            if (dist < min_dist && dist != 0) {
+                min_dist = dist;
+                closest_pair.self[0] = clustersSet.self[i];
+                closest_pair.self[1] = clustersSet.self[j];
+            }
+        }
+    }
+    return closest_pair;
+}
+
 int main() {
 
     // para compilar gcc clusters_test.c -o clusters_test -lm
@@ -123,8 +150,8 @@ int main() {
     Point p4 = {0.06, 0.07};
     Point p5 = {0.08, 0.06};
     Point p6 = {0.07, 0.09};
-    Point p7 = {0.07, 0.07};
-    Point p8 = {0.09, 0.06};
+    Point p7 = {0.09, 0.03};
+    Point p8 = {1.0, 0.02};
 
     Point points1[3] = {p1, p2, p3};
     Point points2[3] = {p4, p5, p6};
@@ -140,23 +167,29 @@ int main() {
     Point p_medoid2 = primary_medoid(&c2);
     c2.primary_medoid = p_medoid2;
 
+    Point p_medoid3 = primary_medoid(&c3);
+    c3.primary_medoid = p_medoid3;
+
     // primary_medoid funciona
+    printf("primary_medoid funciona\n");
     for (int i = 0; i < c1.size; i++) {
         printf("p%i of c1: (%lf, %lf)\n", i+1, c1.self[i].x, c1.self[i].y);
     }
 
-    printf("Primary medoid of c1: (%lf,%lf)\n", p_medoid1);
-
     for (int i = 0; i < c2.size; i++) {
-        printf("Point %i of c2: (%lf, %lf)\n", i+1, c2.self[i].x, c2.self[i].y);
+        printf("p%i of c2: (%lf, %lf)\n", i+1, c2.self[i].x, c2.self[i].y);
     }
 
+    printf("Primary medoid of c1: (%lf,%lf)\n", p_medoid1);
     printf("Primary medoid of c2: (%lf,%lf)\n", p_medoid2);
+    printf("Primary medoid of c3: (%lf,%lf)\n", p_medoid3);
 
     // clusterDist funciona
+    printf("\nclusterDist funciona\n");
     printf("Distance between c1 and c2: %lf\n", clusterDist(c1,c2));
 
     // closest_neighbor funciona
+    printf("\nclosest_neighbor funciona\n");
     ClusterStruct clusters_array[3] = {c1, c2, c3};
     ClustersArray clusters = {clusters_array, 3};
     ClusterStruct cl_to_c2 = closest_neighbor(c2, clusters);
@@ -166,9 +199,19 @@ int main() {
     }
 
     // merge_clusters funciona
+    printf("\nmerge_clusters funciona\n");
     ClusterStruct merged_cluster = merge_clusters(c1,c3);
     for (int i = 0; i < merged_cluster.size; i++) {
         printf("Point %i of merged cluster: (%lf, %lf)\n", i+1, merged_cluster.self[i].x, merged_cluster.self[i].y);
     }
 
+    // closest_pair funciona
+    printf("\nclosest_pair funciona\n");
+    ClustersArray the_closest_pair = closest_pair(clusters);
+
+    for (int i = 0; i < the_closest_pair.size; i++) {
+        for (int j = 0; j < the_closest_pair.self[i].size; j++) {
+            printf("Point %i of cluster %i: (%lf,%lf)\n", j + 1, i + 1, the_closest_pair.self[i].self[j].x, the_closest_pair.self[i].self[j].y);
+        }
+    }
 }

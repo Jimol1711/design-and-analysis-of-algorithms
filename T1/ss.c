@@ -95,6 +95,33 @@ ClusterStruct merge_clusters(ClusterStruct c1, ClusterStruct c2) {
     return merged_cluster;
 }
 
+// Función que encuentra el par más cercano en un set de clusters, retorna arreglo con los dos clusters
+ClustersArray *closest_pair(ClustersArray clustersSet) {
+
+    ClustersArray *closest_pair;
+    closest_pair->size = 2;
+    closest_pair->self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
+    
+    ClusterStruct c1;
+    ClusterStruct c2;
+    double min_dist = DBL_MAX;
+
+    for (int i = 0; i < clustersSet.size; i++) {
+        for (int j = 0; j < clustersSet.size; j++) {
+            if (i == j) {
+                continue;
+            }
+            double dist = clusterDist(clustersSet.self[i], clustersSet.self[j]);
+            if (dist < min_dist && dist != 0) {
+                min_dist = dist;
+                closest_pair->self[0] = clustersSet.self[i];
+                closest_pair->self[1] = clustersSet.self[j];
+            }
+        }
+    }
+    return closest_pair;
+}
+
 // Función que realiza min max split policy de un cluster, devuelve arreglo con punteros a los 2 clusters obtenidos
 Point **MinMaxSplitPolicy(Point *cluster) {
 
