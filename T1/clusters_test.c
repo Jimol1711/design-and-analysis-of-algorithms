@@ -211,12 +211,19 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
                 divided_clusters.self[0] = c1;
                 divided_clusters.self[1] = c2;
             } else {
-                free(c1.self);
-                free(c2.self);
+                // Reinitialize clusters c1 and c2
+                c1.size = 0;
+                Point *new_c1 = (Point*)realloc(c1.self, cluster.size * sizeof(Point));
+                c1.self = new_c1;
+                c2.size = 0;
+                Point *new_c2 = (Point*)realloc(c2.self, cluster.size * sizeof(Point));
+                c2.self = new_c2;               
             }
-
         }
     }
+    free(c1.self);
+    free(c2.self);
+
     return divided_clusters;
 }
 
@@ -323,9 +330,9 @@ int main() {
     printf("Cluster 2 size: %d\n", divided_clusters.self[1].size);
 
     // Free allocated memory
-    free(divided_clusters.self[0].self);
-    free(divided_clusters.self[1].self);
-    free(divided_clusters.self);
+    // free(divided_clusters.self[0].self);
+    // free(divided_clusters.self[1].self);
+    // free(divided_clusters.self);
 
     return 0;
 }
