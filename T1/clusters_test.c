@@ -19,6 +19,11 @@ double euclidean_distance(Point p1, Point p2) {
     return sqrt(x * x + y * y);
 }
 
+// Función que encuentra el mínimo entre dos valores
+double min(double a, double b) {
+    return a < b ? a : b;
+}
+
 // Structure to store size of point arrays
 typedef struct clusterstruct {
     Point *self;
@@ -139,6 +144,82 @@ ClustersArray closest_pair(ClustersArray clustersSet) {
     return closest_pair;
 }
 
+// Función que realiza min max split policy de un cluster, devuelve arreglo con los 2 clusters obtenidos
+ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
+
+    ClustersArray divided_clusters;
+    divided_clusters.size = 2;
+    divided_clusters.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
+    ClusterStruct c1;
+    ClusterStruct c2;
+    double min_max_radius = DBL_MAX;
+
+    for (int i = 0; i < cluster.size; i++) {
+        for (int j = 0; j < cluster.size; j++) {
+            if (i == j) {
+                continue;
+            }
+            // Initialize clusters c1 and c2
+            c1.size = 0;
+            c1.self = (Point*)malloc(cluster.size * sizeof(Point));
+            c2.size = 0;
+            c2.self = (Point*)malloc(cluster.size * sizeof(Point));
+
+            for (int k = 0; k < cluster.size; k++) {
+                if (k == i || k==j) {
+                    continue;
+                }
+                
+                double i_dist = euclidean_distance(cluster.self[i], cluster.self[k]);
+                double j_dist = euclidean_distance(cluster.self[j], cluster.self[k]);
+
+                if (i_dist < j_dist) {
+                    c1.size++;
+                    Point *added_c1 = (Point *)realloc(c1.self, c1.size * sizeof(Point));
+                    c1.self = added_c1;
+                    c1.self[c1.size - 1] = cluster.self[k];
+                } else if (i_dist > j_dist) {
+                    c2.size++;
+                    Point *added_c2 = (Point *)realloc(c2.self, c2.size * sizeof(Point));
+                    c2.self = added_c2;
+                    c2.self[c2.size - 1] = cluster.self[k];
+                }
+
+            }
+
+            double max_covering_radius = 0.0;
+
+            for (int n = 0; n < c1.size; n++) {
+                if (n == i || n == j || n >= c1.size) {
+                    continue;
+                }
+                if (euclidean_distance(c1.self[n], cluster.self[i]) > max_covering_radius) {
+                    max_covering_radius = euclidean_distance(c1.self[n], cluster.self[i]);
+                }
+            }
+            for (int m = 0; m < c2.size; m++) {
+                if (m == i || m == j || m >= c2.size) {
+                    continue;
+                    }
+                if (euclidean_distance(c2.self[m], cluster.self[i]) > max_covering_radius) {
+                    max_covering_radius = euclidean_distance(c2.self[m], cluster.self[i]);
+                }
+            }
+
+            if (max_covering_radius < min_max_radius) {
+                min_max_radius = max_covering_radius;
+                divided_clusters.self[0] = c1;
+                divided_clusters.self[1] = c2;
+            } else {
+                free(c1.self);
+                free(c2.self);
+            }
+
+        }
+    }
+    return divided_clusters;
+}
+
 int main() {
 
     // para compilar gcc clusters_test.c -o clusters_test -lm
@@ -214,4 +295,37 @@ int main() {
             printf("Point %i of cluster %i: (%lf,%lf)\n", j + 1, i + 1, the_closest_pair.self[i].self[j].x, the_closest_pair.self[i].self[j].y);
         }
     }
+
+    // Borrar esto
+    // Sample points
+    Point points[] = {{0.1, 0.2}, {0.4, 0.5}, {0.3, 0.4}, {0.7, 0.6}, {0.9, 0.8}};
+    int num_points = 5;
+
+    // Create a cluster with the sample points
+    ClusterStruct cluster;
+    cluster.size = num_points;
+    cluster.self = points;
+
+    // Test the MinMaxSplitPolicy function
+    ClustersArray divided_clusters = MinMaxSplitPolicy(cluster);
+
+    // Print the clusters
+    printf("\nCluster 1:\n");
+    for (int i = 0; i < divided_clusters.self[0].size; i++) {
+        printf("(%.2f, %.2f)\n", divided_clusters.self[0].self[i].x, divided_clusters.self[0].self[i].y);
+    }
+    printf("Cluster 1 size: %d\n", divided_clusters.self[0].size);
+
+    printf("\nCluster 2:\n");
+    for (int i = 0; i < divided_clusters.self[1].size; i++) {
+        printf("(%.2f, %.2f)\n", divided_clusters.self[1].self[i].x, divided_clusters.self[1].self[i].y);
+    }
+    printf("Cluster 2 size: %d\n", divided_clusters.self[1].size);
+
+    // Free allocated memory
+    free(divided_clusters.self[0].self);
+    free(divided_clusters.self[1].self);
+    free(divided_clusters.self);
+
+    return 0;
 }

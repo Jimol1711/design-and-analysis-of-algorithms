@@ -96,11 +96,11 @@ ClusterStruct merge_clusters(ClusterStruct c1, ClusterStruct c2) {
 }
 
 // Función que encuentra el par más cercano en un set de clusters, retorna arreglo con los dos clusters
-ClustersArray *closest_pair(ClustersArray clustersSet) {
+ClustersArray closest_pair(ClustersArray clustersSet) {
 
-    ClustersArray *closest_pair;
-    closest_pair->size = 2;
-    closest_pair->self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
+    ClustersArray closest_pair;
+    closest_pair.size = 2;
+    closest_pair.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
     
     ClusterStruct c1;
     ClusterStruct c2;
@@ -114,8 +114,8 @@ ClustersArray *closest_pair(ClustersArray clustersSet) {
             double dist = clusterDist(clustersSet.self[i], clustersSet.self[j]);
             if (dist < min_dist && dist != 0) {
                 min_dist = dist;
-                closest_pair->self[0] = clustersSet.self[i];
-                closest_pair->self[1] = clustersSet.self[j];
+                closest_pair.self[0] = clustersSet.self[i];
+                closest_pair.self[1] = clustersSet.self[j];
             }
         }
     }
@@ -123,13 +123,48 @@ ClustersArray *closest_pair(ClustersArray clustersSet) {
 }
 
 // Función que realiza min max split policy de un cluster, devuelve arreglo con punteros a los 2 clusters obtenidos
-Point **MinMaxSplitPolicy(Point *cluster) {
+ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
+
+    ClustersArray divided_clusters;
+    divided_clusters.size = 2;
+    divided_clusters.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
+    ClusterStruct c1;
+    ClusterStruct c2;
+
+    for (int i = 0; i < cluster.size; i++) {
+        for (int j = 0; j < cluster.size; j++) {
+            if (i == j) {
+                continue;
+            }
+            for (int k = 0; k < cluster.size; k++) {
+                if (k == i || k==j) {
+                    continue;
+                }
+                // Initialize clusters c1 and c2
+                c1.size = 0;
+                c1.self = (Point*)malloc(cluster.size * sizeof(Point));
+                c2.size = 0;
+                c2.self = (Point*)malloc(cluster.size * sizeof(Point));
+                
+                double i_dist = euclidean_distance(cluster.self[i], cluster.self[i]);
+                double j_dist = euclidean_distance(cluster.self[j], cluster.self[k]);
+
+            }
+
+        }
+    }
 
 }
 
 // Función que encuentra el máximo entre dos valores
 double max(double a, double b) {
     return (a > b) ? a : b;
+}
+
+
+// Función que encuentra el mínimo entre dos valores
+double min(double a, double b) {
+    return a < b ? a : b;
 }
 
 Point **Cluster(Point *C_in, int C_max, 
