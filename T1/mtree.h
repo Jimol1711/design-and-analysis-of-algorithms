@@ -1,6 +1,8 @@
 #ifndef MTREE_H
 #define MTREE_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 #define B 128 // Tamaño de B calculado
@@ -48,6 +50,15 @@ typedef struct {
 // Function that calculates the Euclidean distance between two points
 double euclidian_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
+}
+
+// Function to create a new node
+Node* create_node() {
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (node) {
+        node->num_entries = 0;
+    }
+    return node;
 }
 
 #endif // MTREE_H

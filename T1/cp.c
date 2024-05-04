@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "mtree.h"
 
 
@@ -33,13 +31,12 @@ void deleteElemenFromArray(Point** array, int index, int array_size) {
     }
 }
 
-Node cpBulkLoading(Point* point_set, int set_size) {
+Node* cpBulkLoading(Point* point_set, int set_size) {
     // STEP 1
     // If the number of points in the point set is less or equal to B.
     if (set_size <= B) {
         // Then create a new Node structure (it will be a leaf)
-        Node newNode;
-        newNode.num_entries = 0;
+        Node* newNode = create_node();
         // For each point in the point set:
         for (int i=0; i<set_size; i++) {
             // Create a new Entry structure with the format on a leaf 
@@ -48,18 +45,26 @@ Node cpBulkLoading(Point* point_set, int set_size) {
             newEntry.cr = 0.0; 
             newEntry.a = NULL;
             // Add the Entry structure into the 'entries' array of the created node
-            newNode.entries[i] = newEntry;
+            newNode->entries[i] = newEntry;
         }
         return newNode;
     }
 
     else {
         int sample_size; // declaration of sample size variable
+        Point* F;
+
+        sample_size = min(B, set_size/B);
+        F = getSamples(point_set, set_size, sample_size);
+
+        int iteracion = 0;
 
         SubsetStructure samples_subsets[sample_size]; // array that contains the samples subsets structure for each sample point in F. STEP 3
         // for each point in the sample subset, create the sample structure 
+        // maybe it goes inside the do while. if true, it would be easier
         for (int i=0; i<sample_size; i++) {
             SubsetStructure newSubsetStructure;
+            newSubsetStructure.point = F[i];
             newSubsetStructure.subset_size = 0;
             newSubsetStructure.sample_subset = NULL;
             samples_subsets[i] = newSubsetStructure;
@@ -67,9 +72,12 @@ Node cpBulkLoading(Point* point_set, int set_size) {
 
         do {
             // STEP 2
-            sample_size = min(B, set_size/B); // size of the set of samples.
-            Point* F = getSamples(point_set, set_size, sample_size); // Get the samples array
-
+            if (iteracion == 0)
+                iteracion++;
+            else {
+                sample_size = min(B, set_size/B); // size of the set of samples.
+                F = getSamples(point_set, set_size, sample_size); // Get the samples array
+            }
 
             // For each point in the point set, assign to the nearest sample
             for (int i=0; i<set_size; i++) {
@@ -127,10 +135,19 @@ Node cpBulkLoading(Point* point_set, int set_size) {
         } while (sample_size == 1); // if the sample size |F| = 1, return to step 2
 
         // STEP 6
-        Node trees[sample_size];
+        Node* T = create_node();
+
         for (int i = 0; i < sample_size; i++) {
             // Recursively call cpBulkLoading for each subset F_j
-            trees[i] = cpBulkLoading(samples_subsets[i].sample_subset, samples_subsets[i].subset_size);
+            if (samples_subsets[i].subset_size > 0) {
+                Node* sub_tree = CP(samples_subsets[i].sample_subset, samples_subsets[i].subset_size);
+                Entry entry;
+                entry.p = F[i];
+                entry.cr = 0.0; // Initial cover radio
+                entry.a = sub_tree;
+                (T->entries)[T->num_entries] = entry;
+                T->num_entries++;
+            }
         }
 
         // STEP 7: if the root of the tree is less than b ...
