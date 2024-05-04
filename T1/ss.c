@@ -31,7 +31,7 @@ Point primary_medoid(Point *cluster, int cluster_size) {
             if (dist > max_distance) {
                 max_distance = dist;
             }
-        }
+        } 
 
         // Update the minimum radius and primary medoid if needed
         if (max_distance < min_radius) {

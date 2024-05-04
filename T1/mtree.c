@@ -104,12 +104,10 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
 }
 
 // Function that search the points that lives inside the ball specified in the query
-Point* search_points_in_radio(Node* node, Query Q) {
+Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
     Point* sol_array = NULL; // Initialize the solutions array as null
     int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
-    int disk_accesses = 1; // Disk accesses count. Starts in 1 because we start to search in the node inmediately
 
-    range_search(node, Q, &sol_array, &array_size, &disk_accesses); // We occupy the range_search auxiliar function
-    return sol_array; // return the array solutions with the points found
-    
+    range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
+    return sol_array; // return the array solutions with the points found   
 }

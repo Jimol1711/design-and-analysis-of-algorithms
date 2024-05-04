@@ -24,7 +24,7 @@ int power_of_two(int exponent) {
 
 int main() {
 
-    // Para compilar: gcc mtree.c -o mtree -lm
+    // Para compilar: gcc mtree-test.c -o mtree-test -lm
     // Para ejecutar: ./mtree
 
     // Test para la búsqueda (crear árbol y query, ver que devuelva los puntos en la query)
@@ -92,6 +92,42 @@ int main() {
     // Imprimimos para probar que funcionó
     for (int i = 0; i < point_nums[0]; i++) {
         printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
+    }
+
+    // =======
+    // Testing
+    // =======
+
+    // 1. Ciaccia Patella
+    int cp_disk_acceses[16];
+
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    for (int i = 0; i < 16; i++) {
+        Node *cp_tree = cpBulkLoading(&P[i], power_of_two(i + 10));
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+            Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
+        }
+        cp_disk_acceses[i] = acceses;
+    }
+
+    // 2. Sexton Swinbank
+    int ss_disk_acceses[16];
+
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    for (int i = 0; i < 16; i++) {
+        Node *ss_tree = sextonSwinbank(&P[i], power_of_two(i + 10));
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+            Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
+        }
+        ss_disk_acceses[i] = acceses;
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 16; i++) {
+        printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
+        printf("SS acceses for set %i: %i", i + 1, ss_disk_acceses[i]);
     }
 
     // Liberamos memoria de cada arreglo
