@@ -27,9 +27,10 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
     if (is_leaf(node)) {
         for (int i=0; i<num_entries; i++) {
-            if(euclidian_distance(entries[i].p, q) <= r) {
+            Point p = entries[i].p;
+            if(euclidian_distance(p, q) <= r) {
                 *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
-                (*sol_array)[*array_size] = q;
+                (*sol_array)[*array_size] = p;
                 (*array_size)++;
             }
         }
