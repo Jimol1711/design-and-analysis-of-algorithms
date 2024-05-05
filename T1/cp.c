@@ -32,10 +32,35 @@ void deleteElemenFromArray(Point** array, int index, int array_size) {
     }
 }
 
+// Function that adds an element to an array
+void addNodeToArray(Node** array, Node node, int* array_size) {
+    *array = (Node*)realloc(*array, (*array_size + 1) * sizeof(Node));
+    (*array)[*array_size] = node;
+    (*array_size)++;
+}
+
 // Function that insert an entry into the entries array of a node
 void insertEntry(Node* node, Entry entry) {
     node->entries[node->num_entries] = entry;
     (node->num_entries)++;
+}
+
+// Function that calculates the height of a tree
+int treeHeight(Node* node) {
+    if (node == NULL) {
+        return 0; // If the tree is empty, height is 0
+    } else {
+        int max_subtree_height = 0;
+        // Iterate through all entries in the node
+        for (int i = 0; i < node->num_entries; i++) {
+            Node* child = node->entries[i].a;
+            int subtree_height = treeHeight(child); // Recursively find height of each child subtree
+            if (subtree_height > max_subtree_height) {
+                max_subtree_height = subtree_height; // Update the maximum subtree height
+            }
+        }
+        return 1 + max_subtree_height; // Height of the current node is 1 plus the maximum height of its child subtrees
+    }
 }
 
 Node* cpBulkLoading(Point* point_set, int set_size) {
@@ -174,9 +199,40 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
             }
         }
 
-       
+        // STEP 8
+        // found h
+        int h;
+        Entry *T_root_entries = T->entries;
+        int T_num_entries = T->num_entries;
 
-        
+        h = treeHeight(T_root_entries[0].a); // set the first subtree height as the minimum
+        for (int j=1; j < T_num_entries; j++) {
+            Node *subtree = T_root_entries[j].a;
+            // if another subtree has smaller height, set that height on h
+            int subtree_height = treeHeight(subtree);
+            if (subtree_height < h)
+                h = subtree_height;
+        }
+
+        // Define T' as empty set
+        Node *T_prime = NULL;
+        int T_prime_size = 0;
+
+        // STEP 9
+
+        // for each Tj 
+        for (int j=0; j < T_num_entries; j++) {
+            Node *subtree = T_root_entries[j].a;
+            int subtree_height = treeHeight(subtree);
+            // if the subtree height is equal to h, add the subtree to T_prime
+            if (subtree_height == h)
+                addNodeToArray(&T_prime, *subtree, &T_prime_size);
+                
+            else {
+
+            }
+        }
+
     }
 
 
