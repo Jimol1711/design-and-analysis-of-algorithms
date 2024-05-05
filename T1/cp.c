@@ -25,17 +25,31 @@ Point* getSamples(Point* point_set, int set_size, int sample_size) {
     return samples; // return the samples array
 }
 
-// Function that delete an element from an array
-void deleteElemenFromArray(Point** array, int index, int array_size) {
+// Function that delete a point from an array
+void deletePointFromArray(Point** array, int index, int array_size) {
     for (int i=index; i < array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
 }
 
-// Function that adds an element to an array
+// Function that delete an  from an array
+void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
+    for (int i=index; i < array_size - 1; i++) {
+        (*array)[i] = (*array)[i+1];
+    }
+}
+
+// Function that adds a node to an array
 void addNodeToArray(Node** array, Node node, int* array_size) {
     *array = (Node*)realloc(*array, (*array_size + 1) * sizeof(Node));
     (*array)[*array_size] = node;
+    (*array_size)++;
+}
+
+// Function that adds a point to an array
+void addPointToArray(Point** array, Point point, int* array_size) {
+    *array = (Point*)realloc(*array, (*array_size + 1) * sizeof(Point));
+    (*array)[*array_size] = point;
     (*array_size)++;
 }
 
@@ -124,18 +138,17 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                 }
                 // Add the point of the set point to the subset of the nearest sample
                 SubsetStructure* subset_structure = &(samples_subsets[nearest_sample_index]); // Obtain a pointer to the structure that references the subset of the nearest sample found
-                int subset_size = subset_structure->subset_size;
-                subset_structure->sample_subset = (Point*)realloc(subset_structure->sample_subset, (subset_size+1) * sizeof(Point));
-                (subset_structure->sample_subset)[subset_size] = point_set[i];
-                subset_structure->subset_size++;
+                int* subset_size = &(subset_structure->subset_size);
+                Point** sample_subset = &(subset_structure->sample_subset);
+                addPointToArray(sample_subset, point_set[i], subset_size);
             }
 
             // Redistribution. STEP 4
             for (int j=0; j<sample_size; j++) { // for each F_j
                 SubsetStructure current_substet = samples_subsets[j];
                 if (current_substet.subset_size < b) { // if |F_j| < b
-                    deleteElemenFromArray(&F, j, sample_size); // delete p_j from F (element j from F)
-                    deleteElemenFromArray(&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
+                    deletePointFromArray(&F, j, sample_size); // delete p_j from F (element j from F)
+                    deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
                     sample_size--; // the sample size is reduced by 1
 
                     // for each p in F_j
@@ -154,10 +167,9 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                         }
                         // Move p point to the nearest subset (F_l)
                         SubsetStructure *subset_structure = &(samples_subsets[nearest_sample_index]);
-                        int subset_size = subset_structure->subset_size;
-                        subset_structure->sample_subset = (Point *)realloc(subset_structure->sample_subset, (subset_size + 1) * sizeof(Point));
-                        (subset_structure->sample_subset)[subset_size] = p;
-                        subset_structure->subset_size++;
+                        int* subset_size = &(subset_structure->subset_size);
+                        Point** sample_subset = &(subset_structure->sample_subset);
+                        addPointToArray(sample_subset, p, subset_size);
                     }
 
                     // Free memory from the sample set being redistributed
@@ -177,8 +189,8 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                 // STEP 7
                 // if root size is less than b
                 if (root->num_entries < b) {
-                    deleteElemenFromArray(&F, j, sample_size); // delete p_fj from F
-                    eleteElemenFromArray(&samples_subsets, j, sample_size); // delete the sample point subset too?
+                    deletePointFromArray(&F, j, sample_size); // delete p_fj from F
+                    deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete the sample point subset too?
                     sample_size--; // F size is reduced
 
                     // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
@@ -201,13 +213,14 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
 
         // STEP 8
         // found h
-        int h;
-        Entry *T_root_entries = T->entries;
-        int T_num_entries = T->num_entries;
+        int h; // min height of the Tj trees
+        Entry *T_entries = T->entries; // Entries of the node T
+        int T_num_entries = T->num_entries; // number of entries of the node T
 
-        h = treeHeight(T_root_entries[0].a); // set the first subtree height as the minimum
+        h = treeHeight(T_entries[0].a); // set the first subtree height as the minimum
         for (int j=1; j < T_num_entries; j++) {
-            Node *subtree = T_root_entries[j].a;
+            Node *subtree = T_entries[j].a;
+
             // if another subtree has smaller height, set that height on h
             int subtree_height = treeHeight(subtree);
             if (subtree_height < h)
@@ -222,16 +235,37 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
 
         // for each Tj 
         for (int j=0; j < T_num_entries; j++) {
-            Node *subtree = T_root_entries[j].a;
+            Node *subtree = T_entries[j].a;
             int subtree_height = treeHeight(subtree);
+
             // if the subtree height is equal to h, add the subtree to T_prime
             if (subtree_height == h)
                 addNodeToArray(&T_prime, *subtree, &T_prime_size);
-                
-            else {
 
+            else {
+                // delete the respective point in F
+                deletePointFromArray(&F, j, sample_size);
+                sample_size--;
+
+                // for each subtree in Tj, insert into T_prime if the subtree has height equal to h
+                Entry* subtree_entries = subtree->entries;
+                int subtree_entries_size = subtree->num_entries;
+
+                for (int p=0; p < subtree_entries_size; p++) {
+                    Node *subtree_child = subtree_entries[p].a; // subtree child
+                    int subtree_child_height = treeHeight(subtree_child); // subtree child height
+
+                    // if the subtree child height is equal to h:
+                    if (subtree_child_height == h) {
+                        addNodeToArray(&T_prime, *subtree_child, &T_prime_size); // add this node to T_prime
+                        Point rootPoint = subtree_entries[p].p; // root point of the subtree child of height h
+                        addPointToArray(&F, rootPoint, sample_size); // add the root point to F
+                    }
+                }
             }
         }
+
+        // STEP 10
 
     }
 
