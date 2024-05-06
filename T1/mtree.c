@@ -84,6 +84,7 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     // If the node is a leaf, search each entry that satisfy the condition of distance.
     // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
     if (is_leaf(node)) {
+        (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
             if(euclidean_distance(entries[i].p, q) <= r) {
                 *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
@@ -94,9 +95,9 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     }
     // if is not a leaf, for each entry, if satisfy this distance condition go down to check its child node 'a'
     else {
+        (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
             if(euclidean_distance(entries[i].p, q) <= entries[i].cr + r){
-                (*disk_accesses)++;
                 range_search(entries[i].a, Q, sol_array, array_size, disk_accesses);
             }
         }
