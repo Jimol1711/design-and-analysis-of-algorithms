@@ -1,1 +1,0 @@
-Node *ciacciaPatella(Point *P);

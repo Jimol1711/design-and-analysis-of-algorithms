@@ -1,3 +1,6 @@
-Mtree.exe
 mtree
 mtree-test
+clusters_test
+cp
+ss
+how_realloc_works
