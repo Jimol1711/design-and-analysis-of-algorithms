@@ -167,14 +167,18 @@ double min(double a, double b) {
     return a < b ? a : b;
 }
 
-Point **Cluster(Point *C_in, int C_max, 
+ClustersArray Cluster(ClusterStruct C_in, int C_max, 
                 // Parámetros que no están en el pseudo código
                 // Número de puntos en C_in
                 int num_points) {
 
     // Partes 1. y 2.
-    Cluster *C_out;
-    Point **C = (struct Point*)malloc(num_points * sizeof(Point));
+    ClustersArray C_out;
+    ClustersArray C;
+
+    for (int i = 0; i < C_in.size; i++) {
+        
+    }
 
     for (int i = 0; i < num_points; i++) {
         Point *ptr;
@@ -224,13 +228,13 @@ Point **Cluster(Point *C_in, int C_max,
     return C_out;
 }
 
-Entry *OutputHoja(Point *C_in,
+Entry *OutputHoja(ClusterStruct C_in,
                 // Parámetros que no están en el pseudo código
                 // Cardinalidad de C_in
                 int C_in_size) {
 
     // Parte 1.
-    Point g = primary_medoid(C_in, C_in_size);
+    Point g = primary_medoid(C_in);
     double r = 0.0;
     Entry *C = malloc(C_in_size * sizeof(Entry));
 
