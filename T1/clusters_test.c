@@ -28,7 +28,6 @@ double min(double a, double b) {
 typedef struct clusterstruct {
     Point *self;
     int size;
-    Point primary_medoid;
 } ClusterStruct;
 
 // Structure to store size of cluster arrays
@@ -62,7 +61,6 @@ Point primary_medoid(ClusterStruct *cluster) {
         }
     }
 
-    cluster->primary_medoid = primary_medoid;
     return primary_medoid;
 }
 
@@ -111,8 +109,6 @@ ClusterStruct merge_clusters(ClusterStruct c1, ClusterStruct c2) {
     for (int i = 0; i < c2.size; i++) {
         merged_cluster.self[index++] = c2.self[i];
     }
-    
-    merged_cluster.primary_medoid = primary_medoid(&merged_cluster);
 
     return merged_cluster;
 }
@@ -155,10 +151,10 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
     double min_max_radius = DBL_MAX;
 
     for (int i = 0; i < cluster.size; i++) {
-        for (int j = 0; j < cluster.size; j++) {
-            if (i == j) {
-                continue;
-            }
+        for (int j = i + 1; j < cluster.size; j++) {
+            // if (i == j) {
+            //    continue;
+            // }
             // Initialize clusters c1 and c2
             c1.size = 0;
             c1.self = (Point*)malloc(cluster.size * sizeof(Point));
@@ -245,18 +241,15 @@ int main() {
     Point points2[3] = {p4, p5, p6};
     Point points3[2] = {p7, p8};
 
-    ClusterStruct c1 = {points1, 3, p1};
-    ClusterStruct c2 = {points2, 3, p4};
-    ClusterStruct c3 = {points3, 2, p8};
+    ClusterStruct c1 = {points1, 3};
+    ClusterStruct c2 = {points2, 3};
+    ClusterStruct c3 = {points3, 2};
 
     Point p_medoid1 = primary_medoid(&c1);
-    c1.primary_medoid = p_medoid1;
 
     Point p_medoid2 = primary_medoid(&c2);
-    c2.primary_medoid = p_medoid2;
 
     Point p_medoid3 = primary_medoid(&c3);
-    c3.primary_medoid = p_medoid3;
 
     // primary_medoid funciona
     printf("primary_medoid funciona\n");
