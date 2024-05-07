@@ -4,33 +4,39 @@
 #include <math.h>
 #include <time.h>
 
-#include "mtree.h"
-
 #define B 128
 
 // Structure of a point
-struct point {
+typedef struct point {
     double x, y;
-};
+} Point;
 
 // Structure of an entry
-struct entry {
+typedef struct entry {
     Point p; // point
     double cr; // covering radius
     Node *a; // disk address to the root of the covering tree
-};
+} Entry;
 
 // Structure of a Node
-struct node {
+typedef struct node {
     Entry entries[B];
-    int size;
-};
+    int num_entries;
+} Node;
 
 // Structure of a query to search points in an Mtree
-struct query {
+typedef struct query {
     Point q;
     double r;
-};
+} Query;
+
+// Structure that represents a sample subset (F_j)
+// Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
+typedef struct {
+    Point point;
+    Point* sample_subset;
+    int subset_size;
+} SubsetStructure;
 
 // Function that calculates the Euclidean distance between two points p1 and p2
 double euclidean_distance(Point p1, Point p2) {
@@ -50,13 +56,13 @@ int is_leaf(Node* node) {
 
 void covering_radius(Node *node) {
     if (is_leaf(node)) {
-        for (int i = 0; i < node->size; i++) {
+        for (int i = 0; i < node->num_entries; i++) {
             node->entries[i].cr = 0.0;
         }
     } else {
-        for (int i = 0; i < node->size; i++) {
+        for (int i = 0; i < node->num_entries; i++) {
             double max_distance = 0.0;
-            for (int j = 0; j < node->size; j++) {
+            for (int j = 0; j < node->num_entries; j++) {
                 double distance = euclidean_distance(node->entries[i].p, node->entries[j].p);
                 if (distance > max_distance) {
                     max_distance = distance;
