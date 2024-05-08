@@ -3,18 +3,6 @@
 
 #include "mtree.h"
 
-// Function that tells whether a node is a leaf or not.
-// Hay que revisar bien la condicion de cuándo un nodo es hoja, quizas la condicion podría relajarse.
-int is_leaf(Node* node) {
-    int num_entries = node->num_entries; // number of entries in the node
-    Entry* entries = node->entries; // node Entry array
-    // For each entry, if any has 'cr' or 'a' non-nulls, so the node is not a leaf
-    for (int i=0; i < num_entries; i++) {
-        if (entries[i].cr != 0.0 || entries[i].a != NULL)
-            return 0;
-    }
-    return 1;
-}
 
 // Auxiliary function that adds the solutions (points) that satisfy the condition in a node entry
 void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {

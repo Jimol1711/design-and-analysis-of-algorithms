@@ -85,6 +85,44 @@ int treeHeight(Node* node) {
     }
 }
 
+// Function that insert a 'Tj' node into the leaf of a 'node', where the leaf point is the same as the point of F[j].
+void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
+    Entry *node_entries = node->entries; // entries of the node
+    int entries_size = node->num_entries; // size of entries of the node
+
+    // if the node is a leaf
+    if (is_leaf(node)) {
+        Point p_j = F[j]; // corresponding point to p_j in F
+
+        // for each entry, verify if his point is equal to p_j
+        for (int i=0; i<entries_size; i++) {
+            Entry* entry = &node_entries[i];
+            Point p = entry->p;
+            if (p.x == p_j.x && p.y == p_j.y) { // if the points have the same coordinates, add Tj to that leaf
+                entry->a = Tj;
+                *already_inserted = 1; // Tj was inserted
+                return;
+            }
+        }
+    }
+
+    else {
+        // Go to each the node children ánd apply the function recursively.
+        for (int i=0; i<entries_size; i++) {
+            // if Tj was inserted, break the iteration
+            if (*already_inserted) 
+                break;
+
+            // if the Tj is not inserted yet
+            else {
+                Entry* entry = &node_entries[i];
+                Node* child = entry->a;
+                joinTj(child, Tj, F, j, already_inserted);
+            }
+        }
+    }
+}
+
 Node* cpBulkLoading(Point* point_set, int set_size) {
     // STEP 1
     // If the number of points in the point set is less or equal to B.
@@ -186,14 +224,18 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
             }
         } while (sample_size == 1); // if the sample size |F| = 1, return to step 2
 
+
         // STEP 6
-        Node* T = NULL;
+
+        Node* T = NULL; // array where we will save every Tj obtained from F
         int T_size = 0;
 
         for (int j = 0; j < sample_size; j++) {
+            SubsetStructure subset_structure = samples_subsets[j];
+
             // Recursively call cpBulkLoading for each subset F_j
-            if (samples_subsets[j].subset_size > 0) {
-                Node* root = CP(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
+            if (subset_structure.subset_size > 0) {
+                Node* root = CP(subset_structure.sample_subset, subset_structure.subset_size);
 
                 // STEP 7
                 int num_root_entries = root->num_entries; // size of the array of entries of the root
@@ -201,7 +243,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                 // if root size is less than b
                 if (root->num_entries < b) { // evaluar de inmediato si no se debe agregar afectara el resultado ???
                     deletePointFromArray(&F, j, sample_size); // delete p_fj from F
-                    deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete the sample point subset too?
+                    // deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete if F_j should be deleted too
                     sample_size--; // F size is reduced
 
                     // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
@@ -225,7 +267,9 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
             }
         }
 
+
         // STEP 8
+
         // found h
         int h; // min height of the Tj trees
         h = treeHeight(&T[0]); // set the first subtree height as the minimum
@@ -243,6 +287,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
         Node *T_prime = NULL;
         int T_prime_size = 0;
 
+
         // STEP 9
 
         // for each Tj 
@@ -257,7 +302,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
             else {
                 // delete the respective point in F
                 deletePointFromArray(&F, j, sample_size);
-                // deleteSubsetStructureFromArray?
+                // deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete if F_j should be deleted too
                 sample_size--;
 
                 // for each subtree in Tj, insert into T_prime if the subtree has height equal to h
@@ -273,20 +318,29 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                         addNodeToArray(&T_prime, *subtree_child, &T_prime_size); // add this node to T_prime
                         Point root_point = subtree_entries[p].p; // root point of the subtree child of height h
                         addPointToArray(&F, root_point, &sample_size); // add the root point to F
-                        // ADD STRUCTURE TO ARRAY?
+                        // ADD STRUCTURE TO ARRAY if when a point p_i is added to F, then a subsetstructure is added to samples subsets corresponding to that point
                     }
                 }
             }
         }
 
         // STEP 10
-        Node *T_sup = cpBulkLoading(F, sample_size);
+        Node *T_sup = cpBulkLoading(F, sample_size); // apply cp algorithm to F (sample array)
+
 
         //STEP 11
-        for (int j=0; j < T_prime_size; j++) {
-            // append each Tj ∈ T  to the leaf of Tsup corresponding to Ofj ∈ F,
-            // obtaining a new M-tree T ;
-        }
-    }
+        
+        int Tj_inserted; // variable that indicates if the Tj was inserted. It is useful to evite unnecesary iterations in joinTj recursivefunction
 
+        // for each Tj in T_prime, insert Tj into the corresponding leaf in T_sup
+        for (int j=0; j < T_prime_size; j++) {
+            Tj_inserted = 0; // begin with the Tj is not inserted still
+            Node *Tj = &T_prime[j];
+            joinTj(T_sup, Tj, F, j, &Tj_inserted);
+        }
+
+
+        // STEP 12
+
+    }
 }
