@@ -27,7 +27,7 @@ struct entry {
 
 // Structure of a Node
 struct node {
-    Entry entries[B];
+    Entry *entries;
     int num_entries;
 };
 

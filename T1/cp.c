@@ -1,27 +1,27 @@
 #include "mtree.c"
 
-// Function that returns a sample array of random unique points from a point set
+// Función que retorna un arreglo de sample_size puntos aleatorios de un conjunto de puntos
 Point* getSamples(Point* point_set, int set_size, int sample_size) {
-    int indices[sample_size]; // array that contains the selected indices of the points in the sample
-    Point* samples = (Point *)malloc(sample_size * sizeof(Point)); // array with the selected points 
-    srand(time(NULL)); // generate a seed given the current time
-    // Add a point in the sample array
-    for (int i=0; i<sample_size; i++) {
+    int indices[sample_size];
+    Point* samples = (Point *)malloc(sample_size * sizeof(Point));
+    srand(time(NULL)); 
+    
+    for (int i=0; i < sample_size; i++) {
         int random_indices = -1;
         while (random_indices == -1) {
-            random_indices = rand() % set_size; // get a random index
-            // for each index already chosen, if that index is equal to the candidate, reject that index and try with another one
-            for (int j=0; j<i; j++) {
+            random_indices = rand() % set_size;
+            
+            for (int j=0; j < i; j++) {
                 if (random_indices == indices[j]) {
                     random_indices = -1;
                     break;
                 }
             }
         }
-        indices[i] = random_indices; // add the index to the array of selected indices
-        samples[i] = point_set[random_indices]; // add the point to the unique sample points
+        indices[i] = random_indices; 
+        samples[i] = point_set[random_indices];
     }
-    return samples; // return the samples array
+    return samples;
 }
 
 // Function that delete a point from an array
@@ -84,8 +84,13 @@ int treeHeight(Node* node) {
     }
 }
 
-// Función que encuentra el mínimo entre dos valores
+// Función que encuentra el mínimo entre dos doubles
 double min(double i, double j) {
+    return i < j ? i : j;
+}
+
+// Función que encuentra el mínimo entre dos ints
+int intMin(int i, int j) {
     return i < j ? i : j;
 }
 
@@ -93,204 +98,197 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
     // STEP 1
     // If the number of points in the point set is less or equal to B.
     if (set_size <= B) {
-        // Then create a new Node structure (it will be a leaf)
-        Node* newNode = create_node();
-        // For each point in the point set:
-        for (int i=0; i<set_size; i++) {
-            // Create a new Entry structure with the format on a leaf 
+        
+        Node* newNode;
+        Entry *entries = newNode->entries;
+        entries = malloc(set_size * sizeof(Entry));
+        
+        for (int i=0; i < set_size; i++) {
+             
             Entry newEntry;
             newEntry.p = point_set[i];
             newEntry.cr = 0.0; 
             newEntry.a = NULL;
-            // Add the Entry structure into the 'entries' array of the created node
-            insertEntry(newNode, newEntry);
+            
+            newNode->entries[i] = newEntry;
         }
         return newNode;
     }
 
-    else {
-        int sample_size; // declaration of sample size variable
-        Point* F;
+    // STEP 2
+    int sample_size;
+    Point *F;
 
-        sample_size = min(B, set_size/B);
-        F = getSamples(point_set, set_size, sample_size);
+    SubsetStructure samples_subsets[sample_size]; // array that contains the samples subsets structure for each sample point in F. STEP 3
+    // for each point in the sample subset, create the sample structure 
+    // maybe it goes inside the do while. if true, it would be easier
+    for (int i=0; i<sample_size; i++) {
+        SubsetStructure newSubsetStructure;
+        newSubsetStructure.point = F[i];
+        newSubsetStructure.subset_size = 0;
+        newSubsetStructure.sample_subset = NULL;
+        samples_subsets[i] = newSubsetStructure;
+    }
 
-        int iteracion = 0;
+    do {
+        // STEP 2
+        sample_size = intMin(B, set_size / B); // size of the set of samples.
+        F = getSamples(point_set, set_size, sample_size); // Get the samples array
 
-        SubsetStructure samples_subsets[sample_size]; // array that contains the samples subsets structure for each sample point in F. STEP 3
-        // for each point in the sample subset, create the sample structure 
-        // maybe it goes inside the do while. if true, it would be easier
-        for (int i=0; i<sample_size; i++) {
-            SubsetStructure newSubsetStructure;
-            newSubsetStructure.point = F[i];
-            newSubsetStructure.subset_size = 0;
-            newSubsetStructure.sample_subset = NULL;
-            samples_subsets[i] = newSubsetStructure;
+        // For each point in the point set, assign to the nearest sample
+        for (int i=0; i < set_size; i++) {
+            double nearest_distance = euclidean_distance(point_set[i], F[0]);
+            int nearest_sample_index = 0;
+            // evaluate for each sample point in F
+            for (int k=1; k<sample_size; k++) {
+                if (euclidean_distance(point_set[i], F[k]) < nearest_distance) {
+                    nearest_distance = euclidean_distance(point_set[i], F[k]);
+                    nearest_sample_index = k;
+                }
+            }
+            // Add the point of the set point to the subset of the nearest sample
+            SubsetStructure* subset_structure = &(samples_subsets[nearest_sample_index]); // Obtain a pointer to the structure that references the subset of the nearest sample found
+            int* subset_size = &(subset_structure->subset_size);
+            Point** sample_subset = &(subset_structure->sample_subset);
+            addPointToArray(sample_subset, point_set[i], subset_size);
         }
 
-        do {
-            // STEP 2
-            if (iteracion == 0)
-                iteracion++;
-            else {
-                sample_size = min(B, set_size/B); // size of the set of samples.
-                F = getSamples(point_set, set_size, sample_size); // Get the samples array
-            }
+        // Redistribution. STEP 4
+        for (int j=0; j<sample_size; j++) { // for each F_j
+            SubsetStructure current_substet = samples_subsets[j];
+            if (current_substet.subset_size < (set_size / B)) { // if |F_j| < b
+                deletePointFromArray(&F, j, sample_size); // delete p_j from F (element j from F)
+                deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
+                sample_size--; // the sample size is reduced by 1
 
-            // For each point in the point set, assign to the nearest sample
-            for (int i=0; i<set_size; i++) {
-                double nearest_distance = euclidean_distance(point_set[i], F[0]);
-                int nearest_sample_index = 0;
-                // evaluate for each sample point in F
-                for (int k=1; k<sample_size; k++) {
-                    if (euclidean_distance(point_set[i], F[k]) < nearest_distance) {
-                        nearest_distance = euclidean_distance(point_set[i], F[k]);
-                        nearest_sample_index = k;
-                    }
-                }
-                // Add the point of the set point to the subset of the nearest sample
-                SubsetStructure* subset_structure = &(samples_subsets[nearest_sample_index]); // Obtain a pointer to the structure that references the subset of the nearest sample found
-                int* subset_size = &(subset_structure->subset_size);
-                Point** sample_subset = &(subset_structure->sample_subset);
-                addPointToArray(sample_subset, point_set[i], subset_size);
-            }
+                // for each p in F_j
+                for (int i=0; i < current_substet.subset_size; i++) {
+                    Point p = (current_substet.sample_subset)[i]; // get the point p
+                    double nearest_distance = euclidean_distance(p, F[0]);
+                    int nearest_sample_index = 0;
 
-            // Redistribution. STEP 4
-            for (int j=0; j<sample_size; j++) { // for each F_j
-                SubsetStructure current_substet = samples_subsets[j];
-                if (current_substet.subset_size < (set_size / B)) { // if |F_j| < b
-                    deletePointFromArray(&F, j, sample_size); // delete p_j from F (element j from F)
-                    deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
-                    sample_size--; // the sample size is reduced by 1
-
-                    // for each p in F_j
-                    for (int i=0; i < current_substet.subset_size; i++) {
-                        Point p = (current_substet.sample_subset)[i]; // get the point p
-                        double nearest_distance = euclidean_distance(p, F[0]);
-                        int nearest_sample_index = 0;
-
-                        // Found the nearest subset for the point p
-                        for (int k = 1; k < sample_size; k++) {
-                            double distance = euclidean_distance(p, F[k]);
-                            if (distance < nearest_distance) {
-                                nearest_distance = distance;
-                                nearest_sample_index = k;
-                            }
+                    // Found the nearest subset for the point p
+                    for (int k = 1; k < sample_size; k++) {
+                        double distance = euclidean_distance(p, F[k]);
+                        if (distance < nearest_distance) {
+                            nearest_distance = distance;
+                            nearest_sample_index = k;
                         }
-                        // Move p point to the nearest subset (F_l)
-                        SubsetStructure *subset_structure = &(samples_subsets[nearest_sample_index]);
-                        int* subset_size = &(subset_structure->subset_size);
-                        Point** sample_subset = &(subset_structure->sample_subset);
-                        addPointToArray(sample_subset, p, subset_size);
                     }
-
-                    // Free memory from the sample set being redistributed
-                    free((current_substet.sample_subset));
-                }
-            }
-        } while (sample_size == 1); // if the sample size |F| = 1, return to step 2
-
-        // STEP 6
-        Node* T = NULL;
-        int T_size = 0;
-
-        for (int j = 0; j < sample_size; j++) {
-            // Recursively call cpBulkLoading for each subset F_j
-            if (samples_subsets[j].subset_size > 0) {
-                Node* root = cpBulkLoading(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
-
-                // STEP 7
-                int num_root_entries = root->num_entries; // size of the array of entries of the root
-
-                // if root size is less than b
-                if (root->num_entries < (set_size / B)) { // evaluar de inmediato si no se debe agregar afectara el resultado ???
-                    deletePointFromArray(&F, j, sample_size); // delete p_fj from F
-                    deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete the sample point subset too?
-                    sample_size--; // F size is reduced
-
-                    // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
-                    Entry *root_entries = root->entries; // Entry array of the root
-
-                    // for each entry of the root, add the new Tj to the T array
-                    for (int p=0; p < num_root_entries; p++) {
-                        Node *root_subtree = root_entries[p].a;
-                        addNodeToArray(&T, *root_subtree, &T_size);
-
-                        // "se agrega el punto pertinente a F" 
-                        Point root_point = root_entries[p].p; // point of the subtree of the root
-                        addPointToArray(&F, root_point, &sample_size); // add the point to F
-                        // ADD STRUCTURE TO ARRAY?
-                    }
+                    // Move p point to the nearest subset (F_l)
+                    SubsetStructure *subset_structure = &(samples_subsets[nearest_sample_index]);
+                    int* subset_size = &(subset_structure->subset_size);
+                    Point** sample_subset = &(subset_structure->sample_subset);
+                    addPointToArray(sample_subset, p, subset_size);
                 }
 
-                // if root size is greater than or equal to b: Add the root to the node array T
-                else
-                    addNodeToArray(&T, *root, &T_size);
+                // Free memory from the sample set being redistributed
+                free((current_substet.sample_subset));
             }
         }
+    } while (sample_size == 1); // if the sample size |F| = 1, return to step 2
 
-        // STEP 8
-        // found h
-        int h; // min height of the Tj trees
-        h = treeHeight(&T[0]); // set the first subtree height as the minimum
+    // STEP 6
+    Node* T = NULL;
+    int T_size = 0;
 
-        for (int j=1; j < T_size; j++) {
-            Node *subtree = &T[j];
+    for (int j = 0; j < sample_size; j++) {
+        // Recursively call cpBulkLoading for each subset F_j
+        if (samples_subsets[j].subset_size > 0) {
+            Node* root = cpBulkLoading(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
 
-            // if another subtree has smaller height, set that height on h
-            int subtree_height = treeHeight(subtree);
-            if (subtree_height < h)
-                h = subtree_height;
-        }
+            // STEP 7
+            int num_root_entries = root->num_entries; // size of the array of entries of the root
 
-        // Define T' as empty set
-        Node *T_prime = NULL;
-        int T_prime_size = 0;
+            // if root size is less than b
+            if (root->num_entries < (set_size / B)) { // evaluar de inmediato si no se debe agregar afectara el resultado ???
+                deletePointFromArray(&F, j, sample_size); // delete p_fj from F
+                deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete the sample point subset too?
+                sample_size--; // F size is reduced
 
-        // STEP 9
+                // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
+                Entry *root_entries = root->entries; // Entry array of the root
 
-        // for each Tj 
-        for (int j=0; j < T_size; j++) {
-            Node *subtree = &T[j];
-            int subtree_height = treeHeight(subtree);
+                // for each entry of the root, add the new Tj to the T array
+                for (int p=0; p < num_root_entries; p++) {
+                    Node *root_subtree = root_entries[p].a;
+                    addNodeToArray(&T, *root_subtree, &T_size);
 
-            // if the subtree height is equal to h, add the subtree to T_prime
-            if (subtree_height == h)
-                addNodeToArray(&T_prime, *subtree, &T_prime_size);
-
-            else {
-                // delete the respective point in F
-                deletePointFromArray(&F, j, sample_size);
-                // deleteSubsetStructureFromArray?
-                sample_size--;
-
-                // for each subtree in Tj, insert into T_prime if the subtree has height equal to h
-                Entry* subtree_entries = subtree->entries;
-                int subtree_entries_size = subtree->num_entries;
-
-                for (int p=0; p < subtree_entries_size; p++) {
-                    Node *subtree_child = subtree_entries[p].a; // subtree child
-                    int subtree_child_height = treeHeight(subtree_child); // subtree child height
-
-                    // if the subtree child height is equal to h:
-                    if (subtree_child_height == h) {
-                        addNodeToArray(&T_prime, *subtree_child, &T_prime_size); // add this node to T_prime
-                        Point root_point = subtree_entries[p].p; // root point of the subtree child of height h
-                        addPointToArray(&F, root_point, &sample_size); // add the root point to F
-                        // ADD STRUCTURE TO ARRAY?
-                    }
+                    // "se agrega el punto pertinente a F" 
+                    Point root_point = root_entries[p].p; // point of the subtree of the root
+                    addPointToArray(&F, root_point, &sample_size); // add the point to F
+                    // ADD STRUCTURE TO ARRAY?
                 }
             }
-        }
 
-        // STEP 10
-        Node *T_sup = cpBulkLoading(F, sample_size);
-
-        //STEP 11
-        for (int j=0; j < T_prime_size; j++) {
-            // append each Tj ∈ T  to the leaf of Tsup corresponding to Ofj ∈ F,
-            // obtaining a new M-tree T ;
+            // if root size is greater than or equal to b: Add the root to the node array T
+            else
+                addNodeToArray(&T, *root, &T_size);
         }
     }
+
+    // STEP 8
+    // found h
+    int h; // min height of the Tj trees
+    h = treeHeight(&T[0]); // set the first subtree height as the minimum
+
+    for (int j=1; j < T_size; j++) {
+        Node *subtree = &T[j];
+
+        // if another subtree has smaller height, set that height on h
+        int subtree_height = treeHeight(subtree);
+        if (subtree_height < h)
+            h = subtree_height;
+    }
+
+    // Define T' as empty set
+    Node *T_prime = NULL;
+    int T_prime_size = 0;
+
+    // STEP 9
+
+    // for each Tj 
+    for (int j=0; j < T_size; j++) {
+        Node *subtree = &T[j];
+        int subtree_height = treeHeight(subtree);
+
+        // if the subtree height is equal to h, add the subtree to T_prime
+        if (subtree_height == h)
+            addNodeToArray(&T_prime, *subtree, &T_prime_size);
+
+        else {
+            // delete the respective point in F
+            deletePointFromArray(&F, j, sample_size);
+            // deleteSubsetStructureFromArray?
+            sample_size--;
+
+            // for each subtree in Tj, insert into T_prime if the subtree has height equal to h
+            Entry* subtree_entries = subtree->entries;
+            int subtree_entries_size = subtree->num_entries;
+
+            for (int p=0; p < subtree_entries_size; p++) {
+                Node *subtree_child = subtree_entries[p].a; // subtree child
+                int subtree_child_height = treeHeight(subtree_child); // subtree child height
+
+                // if the subtree child height is equal to h:
+                if (subtree_child_height == h) {
+                    addNodeToArray(&T_prime, *subtree_child, &T_prime_size); // add this node to T_prime
+                    Point root_point = subtree_entries[p].p; // root point of the subtree child of height h
+                    addPointToArray(&F, root_point, &sample_size); // add the root point to F
+                    // ADD STRUCTURE TO ARRAY?
+                }
+            }
+        }
+    }
+
+    // STEP 10
+    Node *T_sup = cpBulkLoading(F, sample_size);
+
+    //STEP 11
+    for (int j=0; j < T_prime_size; j++) {
+        // append each Tj ∈ T  to the leaf of Tsup corresponding to Ofj ∈ F,
+        // obtaining a new M-tree T ;
+    }
+    
 
 }
