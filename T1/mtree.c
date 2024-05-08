@@ -9,6 +9,7 @@
 typedef struct node Node;
 typedef struct entry Entry;
 typedef struct point Point;
+typedef struct query Query;
 
 // Structure of a point
 struct point {
@@ -30,10 +31,10 @@ struct node {
 };
 
 // Structure of a query to search points in an Mtree
-typedef struct query {
+struct query {
     Point q;
     double r;
-} Query;
+};
 
 // Structure that represents a sample subset (F_j)
 // Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
@@ -122,4 +123,8 @@ Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
 
     range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
     return sol_array; // return the array solutions with the points found   
+}
+
+void main() {
+    
 }

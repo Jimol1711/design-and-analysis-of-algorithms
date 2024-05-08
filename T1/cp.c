@@ -3,7 +3,7 @@
 // Function that returns a sample array of random unique points from a point set
 Point* getSamples(Point* point_set, int set_size, int sample_size) {
     int indices[sample_size]; // array that contains the selected indices of the points in the sample
-    Point samples[sample_size]; // array with the selected points 
+    Point* samples = (Point *)malloc(sample_size * sizeof(Point)); // array with the selected points 
     srand(time(NULL)); // generate a seed given the current time
     // Add a point in the sample array
     for (int i=0; i<sample_size; i++) {
@@ -19,7 +19,7 @@ Point* getSamples(Point* point_set, int set_size, int sample_size) {
             }
         }
         indices[i] = random_indices; // add the index to the array of selected indices
-        samples[i] = point_set[i]; // add the point to the unique sample points
+        samples[i] = point_set[random_indices]; // add the point to the unique sample points
     }
     return samples; // return the samples array
 }
@@ -33,14 +33,14 @@ void deletePointFromArray(Point** array, int index, int array_size) {
 
 // Function that delete a node from an array
 void deleteNodeFromArray(Node** array, int index, int* array_size) {
-    for (int i=index; i < array_size - 1; i++) {
+    for (int i=index; i < *array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
     (*array_size)--;
 }
 
 // Function that delete an  from an array
-void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
+void deleteSubsetStructureFromArray(SubsetStructure*** array, int index, int array_size) {
     for (int i=index; i < array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
@@ -82,6 +82,11 @@ int treeHeight(Node* node) {
         }
         return 1 + max_subtree_height; // Height of the current node is 1 plus the maximum height of its child subtrees
     }
+}
+
+// Función que encuentra el mínimo entre dos valores
+double min(double a, double b) {
+    return a < b ? a : b;
 }
 
 Node* cpBulkLoading(Point* point_set, int set_size) {
@@ -134,12 +139,12 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
 
             // For each point in the point set, assign to the nearest sample
             for (int i=0; i<set_size; i++) {
-                double nearest_distance = euclidian_distance(point_set[i], F[0]);
+                double nearest_distance = euclidean_distance(point_set[i], F[0]);
                 int nearest_sample_index = 0;
                 // evaluate for each sample point in F
                 for (int k=1; k<sample_size; k++) {
-                    if (euclidian_distance(point_set[i], F[k]) < nearest_distance) {
-                        nearest_distance = euclidian_distance(point_set[i], F[k]);
+                    if (euclidean_distance(point_set[i], F[k]) < nearest_distance) {
+                        nearest_distance = euclidean_distance(point_set[i], F[k]);
                         nearest_sample_index = k;
                     }
                 }
@@ -155,18 +160,18 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                 SubsetStructure current_substet = samples_subsets[j];
                 if (current_substet.subset_size < (set_size / B)) { // if |F_j| < b
                     deletePointFromArray(&F, j, sample_size); // delete p_j from F (element j from F)
-                    deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
+                    deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete subset structure j from sample_subset
                     sample_size--; // the sample size is reduced by 1
 
                     // for each p in F_j
                     for (int i=0; i < current_substet.subset_size; i++) {
                         Point p = (current_substet.sample_subset)[i]; // get the point p
-                        double nearest_distance = euclidian_distance(p, F[0]);
+                        double nearest_distance = euclidean_distance(p, F[0]);
                         int nearest_sample_index = 0;
 
                         // Found the nearest subset for the point p
                         for (int k = 1; k < sample_size; k++) {
-                            double distance = euclidian_distance(p, F[k]);
+                            double distance = euclidean_distance(p, F[k]);
                             if (distance < nearest_distance) {
                                 nearest_distance = distance;
                                 nearest_sample_index = k;
@@ -192,7 +197,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
         for (int j = 0; j < sample_size; j++) {
             // Recursively call cpBulkLoading for each subset F_j
             if (samples_subsets[j].subset_size > 0) {
-                Node* root = CP(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
+                Node* root = cpBulkLoading(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
 
                 // STEP 7
                 int num_root_entries = root->num_entries; // size of the array of entries of the root
@@ -200,7 +205,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
                 // if root size is less than b
                 if (root->num_entries < (set_size / B)) { // evaluar de inmediato si no se debe agregar afectara el resultado ???
                     deletePointFromArray(&F, j, sample_size); // delete p_fj from F
-                    deleteSubsetStructureFromArray(&samples_subsets, j, sample_size); // delete the sample point subset too?
+                    deleteSubsetStructureFromArray((SubsetStructure ***)&samples_subsets, j, sample_size); // delete the sample point subset too?
                     sample_size--; // F size is reduced
 
                     // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
@@ -213,7 +218,7 @@ Node* cpBulkLoading(Point* point_set, int set_size) {
 
                         // "se agrega el punto pertinente a F" 
                         Point root_point = root_entries[p].p; // point of the subtree of the root
-                        addPointToArray(&F, root_point, sample_size); // add the point to F
+                        addPointToArray(&F, root_point, &sample_size); // add the point to F
                         // ADD STRUCTURE TO ARRAY?
                     }
                 }

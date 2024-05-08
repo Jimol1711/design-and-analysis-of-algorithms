@@ -3,7 +3,6 @@
 #include <string.h>
 #include <time.h>
 
-#include "mtree.c"
 #include "cp.c"
 #include "ss.c"
 

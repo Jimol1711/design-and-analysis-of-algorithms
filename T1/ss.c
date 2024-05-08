@@ -3,18 +3,21 @@
 
 #include "mtree.c"
 
+typedef struct clusterstruct ClusterStruct;
+typedef struct clustersarray ClustersArray;
+
 // Structure to store size of point arrays
-typedef struct clusterstruct {
+struct clusterstruct {
     Point *self;
     int size;
     Point primary_medoid;
-} ClusterStruct;
+};
 
 // Structure to store size of cluster arrays
-typedef struct Clustersarray {
+struct clustersarray {
     ClusterStruct *self;
     int size;
-} ClustersArray;
+};
 
 // Función que encuentra el medoide primario en un cluster
 Point primary_medoid(ClusterStruct cluster) {
@@ -181,9 +184,7 @@ ClustersArray Cluster(ClusterStruct C_in, int C_max,
     }
 
     for (int i = 0; i < num_points; i++) {
-        Point *ptr;
-        ptr = &C_in[i];
-        C[i] = ptr; 
+        C.self[i] = C_in.self[i]; 
     }
 
     // Parte 3.
