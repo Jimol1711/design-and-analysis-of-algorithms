@@ -5,21 +5,48 @@
 
 typedef struct clusterstruct ClusterStruct;
 typedef struct clustersarray ClustersArray;
+typedef struct entryarray EntryArray;
 
-// Structure to store size of point arrays
+// Estructura para poder almacenar el tamaño de un cluster
 struct clusterstruct {
     Point *self;
     int size;
     Point primary_medoid;
 };
 
-// Structure to store size of cluster arrays
+// Estructura para poder almacenar el tamaño de un conjunto de clusters
 struct clustersarray {
     ClusterStruct *self;
     int size;
 };
 
-// Función que encuentra el medoide primario en un cluster
+// Estructura para poder almacenar el tamaño de un conjunto de entradas
+struct entryarray {
+    Entry *self;
+    int size;
+};
+
+// Función que añade un cluster a un conjunto de clusters
+void addCluster(ClustersArray C, ClusterStruct c) {
+    if (C.size == 0) {
+        C.self = (ClusterStruct *)malloc(sizeof(ClusterStruct));
+        C.self[C.size] = c;
+        C.size++;
+    } else {
+        C.self = (ClusterStruct *)realloc(C.self, (C.size + 1) * sizeof(ClusterStruct));
+        C.self[C.size] = c;
+        C.size++;
+    }
+}
+
+// Función que quita un cluster de un conjunto de clusters
+/* IMPLEMENTAR */
+void removeCluster(ClustersArray C, ClusterStruct c) {
+    printf("Function not implemented");
+    exit(1);
+}
+
+// Función que encuentra el medoide primario de un cluster
 Point primary_medoid(ClusterStruct cluster) {
     double min_radius = 0.0;
     Point primary_medoid = cluster.self[0];
@@ -55,7 +82,7 @@ double clusterDist(ClusterStruct c1, ClusterStruct c2) {
     return dist;
 }
 
-// Función que devuelve el vecino más cercano de un cluster en clustersSet
+// Función que devuelve el vecino más cercano de un cluster en un conjunto de clusters
 ClusterStruct closest_neighbor(ClusterStruct cluster, ClustersArray clustersSet) {
 
     ClusterStruct closest_neighbor = cluster;
@@ -125,8 +152,12 @@ ClustersArray closest_pair(ClustersArray clustersSet) {
     return closest_pair;
 }
 
-// Función que realiza min max split policy de un cluster, devuelve arreglo con punteros a los 2 clusters obtenidos
+// Función que realiza min max split policy de un cluster, retorna arreglo con los dos clusters
+/* ARREGLAR */
 ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
+
+    printf("MinMaxSplitPolicy not working");
+    exit(1);
 
     ClustersArray divided_clusters;
     divided_clusters.size = 2;
@@ -159,169 +190,175 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
 
 }
 
-// Función que encuentra el máximo entre dos valores
-double max(double a, double b) {
-    return (a > b) ? a : b;
+// Función que encuentra el máximo entre dos doubles
+double max(double i, double j) {
+    return (i > j) ? i : j;
 }
 
-
-// Función que encuentra el mínimo entre dos valores
-double min(double a, double b) {
-    return a < b ? a : b;
+// Función que encuentra el mínimo entre dos doubles
+double min(double i, double j) {
+    return i < j ? i : j;
 }
 
-ClustersArray Cluster(ClusterStruct C_in, int C_max, 
-                // Parámetros que no están en el pseudo código
-                // Número de puntos en C_in
-                int num_points) {
+// Función que clusteriza un conjunto de puntos, devuelve conjunto de clusters
+ClustersArray Cluster(ClusterStruct C_in) {
 
-    // Partes 1. y 2.
-    ClustersArray C_out;
-    ClustersArray C;
-
-    for (int i = 0; i < C_in.size; i++) {
-        
+    if (C_in.size < b) {
+        printf("El tamaño del set de puntos es menor a b.\n");
+        exit(1);
     }
 
-    for (int i = 0; i < num_points; i++) {
-        C.self[i] = C_in.self[i]; 
+    // Parte 1.
+    ClusterStruct *C_out_clusters;
+    ClustersArray C_out = {C_out_clusters, 0};
+    ClusterStruct *C_clusters;
+    ClustersArray C = {C_clusters, 0};
+
+    // Parte 2.
+    for (int i = 0; i < C_in.size; i++) {
+        /* añadir {p} a C */
+        Point p = C_in.self[i];
+        Point *pp = (Point *)malloc(sizeof(Point));
+        pp[0] = p;
+        ClusterStruct C_p = {pp, 1};
+        addCluster(C, C_p);
     }
 
     // Parte 3.
-    int C_size = num_points;
-    int Cout_size = 0;
-    while(C_size != 1) {
-        for (int i = 0; i < C_size; i++) {
-            for (int j = 0; j < C_size; j++) {
-                if (i == j) {
-                    continue;
-                }
-
-            }
+    while(C.size > 1) {
+        // Parte 3.1 (Aquí la condición |c1| >= |c2| se revisa distinto, quizás falle)
+        ClustersArray C_closest = closest_pair(C);
+        ClusterStruct c1 = C_closest.self[0];
+        ClusterStruct c2 = C_closest.self[1];
+        // Parte 3.2
+        if (c1.size + c2.size <= B) {
+            removeCluster(C, c1);
+            removeCluster(C, c2);
+            ClusterStruct c_union = merge_clusters(c1, c2);
+            addCluster(C, c_union);
+        // Parte 3.3
+        } else if (c1.size >= c2.size) {
+            removeCluster(C, c1);
+            addCluster(C_out, c1);
+        } else {
+            removeCluster(C, c2);
+            addCluster(C_out, c2);
         }
-        // WIP, por aquí se aumenta o disminuye C_out.size
     }
 
-    // Parte 4. y 5.
-    Point *c = C[0];
-    Point *c_prime;
-    if (Cout_size > 0) {
-        Point *c_prime = closest_neighbor(c, &C_out);
-        // Remove c_prime from C_out
+    // Parte 4.
+    ClusterStruct c = C.self[0];
+
+    // Parte 5.
+    ClusterStruct c_prime;
+    if (C_out.size > 0) {
+        c_prime = closest_neighbor(c, C_out);
+        removeCluster(C_out, c_prime);
     } else {
-        Point *c_prime = NULL;
+        ClusterStruct c_prime = {NULL, 0};
     }
 
     // Parte 6.
-    Point *c_U_c_prime = merge_clusters(c, c_prime);
-    int c_U_c_prime_size; 
-    // Determine c_U_c_prime size
-    if (c_U_c_prime_size <= B) {
-        // Add c_U_c_prime to C_out
+    ClusterStruct c_U_c_prime = merge_clusters(c, c_prime);
+    if (c_U_c_prime.size <= B) {
+        addCluster(C_out, c_U_c_prime);
     } else {
-        Point **c1_and_c2 = MinMaxSplitPolicy(c_U_c_prime);
-        Point *c1 = c1_and_c2[0];
-        Point *c2 = c1_and_c2[1];
-        // Add c1 and c2 to C_out
+        ClustersArray divided = MinMaxSplitPolicy(c_U_c_prime);
+        ClusterStruct div1 = divided.self[0];
+        ClusterStruct div2 = divided.self[1];
+        addCluster(C_out, div1);
+        addCluster(C_out, div2);      
     }
 
     // Parte 7.
     return C_out;
 }
 
-Entry *OutputHoja(ClusterStruct C_in,
-                // Parámetros que no están en el pseudo código
-                // Cardinalidad de C_in
-                int C_in_size) {
+// Función que retorna entrada para hoja del mtree
+Entry OutputHoja(ClusterStruct C_in) {
 
     // Parte 1.
     Point g = primary_medoid(C_in);
     double r = 0.0;
-    Entry *C = malloc(C_in_size * sizeof(Entry));
+    Node C; 
 
     // Parte 2.
-    for (int i = 0; i < C_in_size; i++) {
-        C[i].p = C_in[i];
-        C[i].cr = 0.0;
-        C[i].a = NULL;
-        r = max(r, euclidean_distance(g, C[i].p));
+    for (int i = 0; i < C_in.size; i++) {
+        Point p = C_in.self[i];
+        Entry ent = {p, 0.0, NULL};
+        C.entries[i] = ent; // Esto puede fallar porque no se va a llenar el nodo
+        r = max(r, euclidean_distance(g, p));
     }
 
     // Parte 3.
-    Point *a = &C;
+    Node *a = &C;
 
     // Parte 4.
-    Entry *leaf;
-    leaf->p = g;
-    leaf->cr = r;
-    leaf->a = a;
+    Entry leaf = {g, r, a};
 
     return leaf;
-
 }
 
-Entry *OutputInterno(Entry *C_mra,
-                    // Parámetros que no están en el pseudo código
-                    // Cardinalidad de C_mra
-                    int C_mra_size) {
-
+// Función que retorna entrada para nodo interno del mtree
+Entry OutputInterno(EntryArray C_mra) {
+    
     // Parte 1.
-    Point *C_in = malloc(C_mra_size * sizeof(Point));
-    int C_in_size = C_mra_size;
+    ClusterStruct C_in;
+    C_in.self = (Point *)malloc(C_mra.size * sizeof(Point));
+    C_in.size = C_mra.size;
 
-    for (int i = 0; i < C_mra_size; i++) {
-        C_in[i] = C_mra[i].p;
+    for (int i = 0; i < C_mra.size; i++) {
+        C_in.self[i] = C_mra.self[i].p;
     }
 
-    Point G = primary_medoid(C_in, C_in_size);
-    int R = 0;
-    Entry *C = malloc(C_mra_size * sizeof(Entry));
+    Point G = primary_medoid(C_in);
+    double R = 0.0;
+    Node C;
 
     // Parte 2.
-    for (int i = 0; i < C_mra_size; i++) {
-        C[i] = C_mra[i];
-        R = max(R, euclidean_distance(G, C_mra[i].p) + C_mra[i].cr);
+    for (int i = 0; i < C_mra.size; i++) {
+        C.entries[i] = C_mra.self[i];
+        R = max(R, euclidean_distance(G, C_mra.self[i].p) + C_mra.self[i].cr);
     }
 
     // Parte 3.
-    Entry *A = &C;
+    Node *A = &C;
 
     // Parte 4.
-    Entry *internal;
-    internal->p = G;
-    internal->cr = R;
-    internal->a = A;
+    Entry internal = {G, R, A};
 
-    free(C_in);
-    free(C);
+    free(C_in.self);
+    free(C_in.size);
 
     return internal;
 }
 
-Node *sextonSwinbank(Point *C_in,
-                    // Parámetros que no están en el pseudo-código
-                    // Cardinalidad de C_in
-                    int C_in_size) {
+// Función que realiza el algoritmo ss sobre un conjunto de puntos, retorna el árbol construido
+Node *sextonSwinbank(ClusterStruct C_in) {
 
     // Parte 1.
-    if (C_in_size <= B) {
-        Entry *leaf = OutputHoja(C_in, C_in_size);
-        Node *child = leaf->a;
-        return child;
+    if (C_in.size <= B) {
+        Entry leaf = OutputHoja(C_in);
+        Node *tree = leaf.a;
+        return tree;
     }
 
     // Parte 2.
-    PointsArray c_out_pts = Cluster(C_in, B, C_in_size);
-    Point *C_out = c_out_pts.self;
-    int C_out_size = c_out_pts.size;
+    ClustersArray C_out = Cluster(C_in);
+    EntryArray C;
+    C.self = (Entry *)malloc(C_out.size * sizeof(Entry));
+    C.size = 0;
 
-    PointsArray c_pts;
-    Point *C = c_pts.self;
-    int C_size = 0;
-
-    for (int i = 0; i < C_out_size; i++) {
-        Point c = C_out[i];
-        C[i] = OutputHoja();
+    // Parte 3.
+    for (int i = 0; i < C_out.size; i++) {
+        C.self[i] = OutputHoja(C_out.self[i]);
+        C.size++;
     }
-    
+
+    // Parte 4.
+    while(C.size > B) {
+        for (int i = 0; i < C.size; i++) {
+            
+        }
+    }
 }

@@ -20,8 +20,8 @@ double euclidean_distance(Point p1, Point p2) {
 }
 
 // Función que encuentra el mínimo entre dos valores
-double min(double a, double b) {
-    return a < b ? a : b;
+double min(double i, double j) {
+    return i < j ? i : j;
 }
 
 // Structure to store size of point arrays

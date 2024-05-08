@@ -5,6 +5,7 @@
 #include <time.h>
 
 #define B 128
+#define b 64
 
 typedef struct node Node;
 typedef struct entry Entry;
