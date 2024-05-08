@@ -85,8 +85,8 @@ int treeHeight(Node* node) {
 }
 
 // Función que encuentra el mínimo entre dos valores
-double min(double a, double b) {
-    return a < b ? a : b;
+double min(double i, double j) {
+    return i < j ? i : j;
 }
 
 Node* cpBulkLoading(Point* point_set, int set_size) {
