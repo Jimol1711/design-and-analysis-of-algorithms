@@ -18,6 +18,11 @@ typedef struct {
     int size;
 } EntryArray;
 
+typedef struct {
+    EntryArray *entries_array;
+    int size;
+} EntryArrayArray;
+
 void addCluster(ClusterArray C, Cluster c) {
     if (C.size == 0) {
         C.clusters = (Cluster *)malloc(sizeof(Cluster));
@@ -57,9 +62,15 @@ ClusterArray cluster(Cluster C_in) {
     /* 3. */
     while (C.size > 1) {
         ClusterArray C_mas_cercanos = clustersMasCercanos(C);
-        // revisar c1.size >= c2.size
-        Cluster c1 = C_mas_cercanos.clusters[0];
-        Cluster c2 = C_mas_cercanos.clusters[1];
+        Cluster c1, c2;
+        if (C_mas_cercanos.clusters[0].size >= C_mas_cercanos.clusters[1].size){
+            Cluster c1 = C_mas_cercanos.clusters[0];
+            Cluster c2 = C_mas_cercanos.clusters[1];
+        }
+        else {
+            Cluster c1 = C_mas_cercanos.clusters[1];
+            Cluster c2 = C_mas_cercanos.clusters[0];
+        }
         if ((c1.size + c2.size) <= B) {
             removeCluster(C, c1);
             removeCluster(C, c2);
@@ -72,7 +83,7 @@ ClusterArray cluster(Cluster C_in) {
         }
     }
     /* 4. */
-    Cluster c = C.clusters[0]; // el último cluster debería quedar en la posición 0
+    Cluster c = C.clusters[0];
     /* 5. */
     Cluster c_prima;
     if (C_out.size > 0) {
@@ -80,91 +91,111 @@ ClusterArray cluster(Cluster C_in) {
         removeCluster(C_out, c_prima);
     }
     else {
-        Point *p;
-        Cluster c_prima = {p, 0}; // revisar esto por el primer 0
+        Point *c_prima_points;
+        Cluster c_prima = {c_prima_points, 0};
     }
     /* 6. */
     if ((c.size + c_prima.size) <= B) {
         /* añadimos (c U c_prima) a C_out*/
-        Cluster c_union = mergeCluster(c, c_prima);
-        addCluster(C_out, c_union);
+        Cluster c_union_prima = mergeCluster(c, c_prima);
+        addCluster(C_out, c_union_prima);
     }
     else {
-        ClusterArray minMaxCluster = MinMaxSplitPolicy(c, c_prima);
+        ClusterArray minMaxCluster = minMaxSplitPolicy(c, c_prima);
         Cluster c1 = minMaxCluster.clusters[0];
         Cluster c2 = minMaxCluster.clusters[1];
         addCluster(C_out, c1);
         addCluster(C_out, c2);
     }
+    /* 7. */
     return C_out;
 }
 
 Entry OutputHoja(Cluster C_in) {
+    /* 1. */
     Point g = primaryMedoid(C_in);
     double r = 0;
-    // falta inicializar bien el nodo
-    Node C = {}; // creo que aquí hay que de todas formal pasarle un puntero y 0
+    /* FALTA DEFINIR C_entries*/
+    Node C = {C_entries, 0};
+    /* 2. */
     for (int i = 0; i < C_in.size; i++) {
         Point p = C_in.points[i];
         Entry new_entry = {p, 0., NULL};
-        /* addEntry(Node N, Entry E) */
-        C.entries[i] = new_entry;
-        C.num_entries++;
+        /* addEntryInNode(Node N, Entry E) */
+        addEntryInNOde(C, new_entry);
         r = max(r, euclidian_distance(g,p));
     }
+    /* 3. */
     Node *a = &C;
+    /* 4. */
     Entry out = {g, r, a};
     return out;
 }
 
 Entry OutputInterno(EntryArray C_mra) {
+    /* 1. */
     Cluster C_in = pointsInEntryArray(C_mra);
     Point G = primaryMedoid(C_in);
     double R = 0.;
-    // inicializar bien el nodo
-    Node C = {};
+    /* FALTA DEFINIR C_entries*/
+    Node C = {C_entries, 0};
+    /* 2. */
     for (int i = 0; i < C_mra.size; i++) {
-        Entry t = C_mra.entries[i];
-        // Añadir C_mra.entries[i] en C
-        R = max(R, euclidian_distance(G,t.p) + t.cr);
+        Entry new_entry = C_mra.entries[i];
+        /* addEntryInNode(Node N, Entry E) */
+        addEntryInNode(C, new_entry);
+        R = max(R, euclidian_distance(G,new_entry.p) + new_entry.cr);
     }
+    /* 3. */
     Node *A = &C;
+    /* 4. */
     Entry out = {G, R, A};
     return out;
 }
 
 Node *AlgoritmoSS(Cluster C_in) {
+    /* 1. */
     if (C_in.size <= B) {
         Entry res = OutputHoja(C_in);
         return res.a;
     }
+    /* 2. */
     ClusterArray C_out = cluster(C_in);
-    EntryArray C = {}; // C es un conjunto de entries
+    Entry *C_entries;
+    EntryArray C = {C_entries, 0};
+    /* 3. */
     for (int i = 0; i < C_out.size; i++) {
         Cluster c = C_out.clusters[i];
-        Entry t = OutputHoja(c);
-        // agregar OutputHoja(c) a C
+        Entry hoja_c = OutputHoja(c);
+        /* addEntryInEntryArray(EntryArray E, Entry e) */
+        addEntryInEntryArray(C, hoja_c);
     }
+    /* 4. */
     while (C.size > B) {
-        // 4.1
-        /* creo que esto no va
+        /* 4.1 */
         Cluster C_in = pointsInEntryArray(C);
         ClusterArray C_out = cluster(C_in);
-        */
-        EntryArray C_mra = {};
-        //4.2
+        EntryArray *C_mra_array_entries;
+        EntryArrayArray C_mra = {C_mra_array_entries, 0};
+        /* 4.2 */
         for (int i = 0; i < C_out.size; i++) {
             Cluster c = C_out.clusters[i];
-            // obtener s y añadirlo a C_mra
+            /* entriesWithPointInCluster(Entry E, Cluster C) */
+            EntryArray s = entriesWithPointInCluster(C, c);
+            addEntryArrayInEntryArrayArray(C_mra, s);
         }
-        //4.3
-        EntryArray C = {};
-        //4.4
+        /* 4.3 */
+        Entry *C_entries;
+        EntryArray C = {C_entries, 0};
+        /* 4.4 */
         for (int i = 0; i < C_mra.size; i++) {
-            Entry s = C_mra.entries[i];
-            // agregar OutputInterno(s) a C
+            EntryArray s = C_mra.entries_array[i];
+            Entry interno_s = OutputInterno(s);
+            addEntryInEntryArray(C, interno_s);
         }
     }
-    Entry c = OutputInterno(C);
-    return c.a;
+    /* 5. */
+    Entry res = OutputInterno(C);
+    /* 6. */
+    return res.a;
 }
