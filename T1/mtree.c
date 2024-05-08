@@ -6,23 +6,28 @@
 
 #define B 128
 
+typedef struct node Node;
+typedef struct entry Entry;
+typedef struct point Point;
+
 // Structure of a point
-typedef struct point {
+struct point {
     double x, y;
-} Point;
+};
 
 // Structure of an entry
-typedef struct entry {
+struct entry {
     Point p; // point
     double cr; // covering radius
     Node *a; // disk address to the root of the covering tree
-} Entry;
+};
+
 
 // Structure of a Node
-typedef struct node {
+struct node {
     Entry entries[B];
     int num_entries;
-} Node;
+};
 
 // Structure of a query to search points in an Mtree
 typedef struct query {
