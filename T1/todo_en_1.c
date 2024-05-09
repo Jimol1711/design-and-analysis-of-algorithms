@@ -1,3 +1,147 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
+
+#define B 128
+#define b 64
+
+typedef struct node Node;
+typedef struct entry Entry;
+typedef struct point Point;
+typedef struct query Query;
+typedef struct subsetstructure SubsetStructure;
+
+// Structure of a point
+struct point {
+    double x, y;
+};
+
+// Structure of an entry
+struct entry {
+    Point p; // point
+    double cr; // covering radius
+    Node *a; // disk address to the root of the covering tree
+};
+
+
+// Structure of a Node
+struct node {
+    Entry *entries;
+    int num_entries;
+};
+
+// Structure of a query to search points in an Mtree
+struct query {
+    Point q;
+    double r;
+};
+
+// Structure that represents a sample subset (F_j)
+// Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
+struct subsetstructure {
+    Point point;
+    Point* sample_subset;
+    int subset_size;
+};
+
+// Function that calculates the Euclidean distance between two points p1 and p2
+double euclidean_distance(Point p1, Point p2) {
+    return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
+}
+
+// Function that tells whether a node is a leaf or not.
+int is_leaf(Node* node) {
+    int num_entries = sizeof(node) / sizeof(Entry);
+    Entry* entries = node->entries;
+    for (int i=0; i < num_entries; i++) {
+        if (entries[i].cr != 0.0 || entries[i].a != NULL)
+            return 0;
+    }
+    return 1;
+}
+
+void covering_radius(Node *node) {
+    if (is_leaf(node)) {
+        for (int i = 0; i < node->num_entries; i++) {
+            node->entries[i].cr = 0.0;
+        }
+    } else {
+        for (int i = 0; i < node->num_entries; i++) {
+            double max_distance = 0.0;
+            for (int j = 0; j < node->num_entries; j++) {
+                double distance = euclidean_distance(node->entries[i].p, node->entries[j].p);
+                if (distance > max_distance) {
+                    max_distance = distance;
+                }
+            }
+            node->entries[i].cr = max_distance;
+        }
+    }
+}
+
+// Function that creates a node
+Node* create_node() {
+    Node* node = (Node*)malloc(B * sizeof(Entry));
+    covering_radius(node);
+    return node;
+}
+
+// Auxiliary function that adds the solutions (points) that satisfy the condition in a node entry
+void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
+    Point q = Q.q; // query point
+    double r = Q.r; // query radio
+    int num_entries = sizeof(node) / sizeof(Entry); // number of entries in the node
+    Entry* entries = node->entries; // node Entry array
+
+    // If the node is a leaf, search each entry that satisfy the condition of distance.
+    // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
+    if (is_leaf(node)) {
+        (*disk_accesses)++;
+        for (int i=0; i<num_entries; i++) {
+            if(euclidean_distance(entries[i].p, q) <= r) {
+                *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
+                (*sol_array)[*array_size] = q;
+                (*array_size)++;
+            }
+        }
+    }
+    // if is not a leaf, for each entry, if satisfy this distance condition go down to check its child node 'a'
+    else {
+        (*disk_accesses)++;
+        for (int i=0; i<num_entries; i++) {
+            if(euclidean_distance(entries[i].p, q) <= entries[i].cr + r){
+                range_search(entries[i].a, Q, sol_array, array_size, disk_accesses);
+            }
+        }
+    }
+}
+
+// Function that search the points that lives inside the ball specified in the query
+Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
+    Point* sol_array = NULL; // Initialize the solutions array as null
+    int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
+
+    range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
+    return sol_array; // return the array solutions with the points found   
+}
+
+/*
+
+
+
+
+
+
+DESDE AQUÍ CP
+
+
+
+
+
+
+*/
 
 // Function that returns a sample array of random unique points from a point set
 Point* getSamples(Point* point_set, int point_size, int sample_size) {
@@ -8,6 +152,7 @@ Point* getSamples(Point* point_set, int point_size, int sample_size) {
     // Add a point in the sample array
     for (int i=0; i<sample_size; i++) {
         int random_indices = -1;
+        int iter = 0;
         while (random_indices == -1) {
             random_indices = rand() % point_size; // get a random index
 
@@ -17,6 +162,10 @@ Point* getSamples(Point* point_set, int point_size, int sample_size) {
                     random_indices = -1;
                     break;
                 }
+            }
+            if (iter >= 30) {
+                printf("fail");
+                exit(1);
             }
         }
 
@@ -169,7 +318,7 @@ int intMin(int i, int j) {
 
 Node* cpBulkLoading(Point* P, int P_size) {
     // STEP 1
-    printf("Begin Step 1\n");
+    // printf("Begin Step 1\n");
     // If the number of points in the point set is less or equal to B.
     if (P_size <= B) {
         // Then create a new Node structure (it will be a leaf)
@@ -186,15 +335,19 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
         return newNode;
     }
-    printf("End Step 1\n");
+    // printf("End Step 1\n");
     
     int F_size = intMin(B, P_size / B); // sample size of F
+    // printf("%i", F_size);
     Point *F; // array F containing samples chosen at random from P
-    SubsetStructure samples_subsets; // array that contains, for each element, the Fk array and its size
+    SubsetStructure samples_subsets[F_size]; // array that contains, for each element, the Fk array and its size;
 
-    samples_subsets.sample_subset = (Point *)malloc(F_size * sizeof(Point));
-
-    printf("Begin Step 2\n");
+    // printf("Begin Step 2\n");
+    int iter = 0;
+    if (iter >= 30) {
+        printf("fail");
+        exit(1);
+    }
     do {
         // STEP 2
 
@@ -203,12 +356,12 @@ Node* cpBulkLoading(Point* P, int P_size) {
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
         for (int i=0; i < F_size; i++) {
 
-            printf("Size of F: %i\n", F_size);
+            // printf("Size of F: %i\n", F_size);
             
             SubsetStructure newSubsetStructure = {F[i], NULL, 0};
-            samples_subsets.sample_subset[i] = newSubsetStructure.point;
+            samples_subsets[i] = newSubsetStructure;
         }
-        printf("Step 3\n");
+        // printf("Step 3\n");
         // STEP 3
 
         // For each point in the point set, assign to the nearest sample
@@ -228,13 +381,13 @@ Node* cpBulkLoading(Point* P, int P_size) {
             }
 
             // Add the point of P to the subset of the nearest sample
-            SubsetStructure* nearest_subset = &samples_subsets.sample_subset[nearest_sample_index]; // Obtain a pointer to the structure that references the subset of the nearest sample found
+            SubsetStructure* nearest_subset = &(samples_subsets[nearest_sample_index]); // Obtain a pointer to the structure that references the subset of the nearest sample found
             Point** Fj_array = &(nearest_subset->sample_subset); // obtain a pointer to the Fj
             int* Fj_size = &(nearest_subset->subset_size); // obtain a pointer to the Fj size
             addPointToArray(Fj_array, p, Fj_size); // add P[i] to Fj
         }
 
-        printf("Step 4\n");
+        // printf("Step 4\n");
         // STEP 4. Redistribution
         // STEP 4.1
         for (int j=0; j<F_size; j++) { // for each Fj
@@ -278,11 +431,13 @@ Node* cpBulkLoading(Point* P, int P_size) {
             }
         }
 
+        iter++;
+
     } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
-    printf("Passed Step 5\n");
+    // printf("Passed Step 5\n");
 
     // STEP 6
-    printf("Step 6\n");
+    // printf("Step 6\n");
     Node* T = NULL; // array where we will save every Tj obtained from F
     int T_size = 0;
 
@@ -298,7 +453,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
 
             // STEP 7
-            printf("Step 7\n");
+            // printf("Step 7\n");
             int Tj_size = Tj->num_entries; // size of the Tj array of entries
 
             // if Tj size is less than b
@@ -329,7 +484,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
     }
 
     // STEP 8
-    printf("Step 7\n");
+    // printf("Step 8\n");
     // found h
     int h; // min height of the Tj trees
     h = treeHeight(&T[0]); // set the first subtree height as the minimum
@@ -349,7 +504,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
 
     // STEP 9
-    printf("Step 9\n");
+    // printf("Step 9\n");
     // for each Tj 
     for (int j=0; j < T_size; j++) {
         Node *Tj = &T[j]; // Tj
@@ -384,12 +539,12 @@ Node* cpBulkLoading(Point* P, int P_size) {
     }
 
     // STEP 10
-    printf("Step 10\n");
+    // printf("Step 10\n");
     Node *T_sup = cpBulkLoading(F, F_size); // apply cp algorithm to F (sample array)
 
 
     //STEP 11
-    printf("Step 11\n");
+    // printf("Step 11\n");
     int Tj_inserted; // variable that indicates if the Tj was inserted. It is useful to evite unnecesary iterations in joinTj recursive function
 
     // for each Tj in T_prime, insert Tj into the corresponding leaf in T_sup
@@ -400,12 +555,168 @@ Node* cpBulkLoading(Point* P, int P_size) {
     }
 
     // STEP 12
-    printf("Step 12\n");
+    // printf("Step 12\n");
     // set the covering radius for each entry of T_sup
     setCoveringRadius(T_sup);
 
     // STEP 13
-    printf("Step 13\n");
+    // printf("Step 13\n");
     // return T_sup
     return T_sup;
+}
+
+/*
+
+
+
+
+
+
+DESDE AQUÍ MTREE TEST
+
+
+
+
+
+
+*/
+
+// #include "mtree.c"
+// #include "cp.c"
+// #include "ss.c"
+
+// Function that returns a random double value between 0 and 1
+double random_double() {
+    return (double)rand() / RAND_MAX;
+}
+
+// Function that returns two to the exponent
+int power_of_two(int exponent) {
+    int result = 1;
+    for (int i = 0; i < exponent; i++) {
+        result *= 2;
+    }
+    return result;
+}
+
+int main() {
+
+    // Para compilar: gcc mtree-test.c -o mtree-test -lm
+    // Para ejecutar: ./mtree
+
+    // Test para la búsqueda (crear árbol y query, ver que devuelva los puntos en la query)
+
+    // Test de cp (contar accesos a disco en árbol construido con cp para n puntos, con n
+    // entre 2**10 y 2**25)
+
+    // Test de ss (contar accesos a disco en árbol construido con ss para n puntos, con n
+    // entre 2**10 y 2**25)
+
+    // ======================
+    // Determinar tamano de B
+    // ======================
+    printf("tamano de entrada: %i\n", sizeof(Entry));
+    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
+
+    // =====================================================================================================
+    // Creación set de puntos aleatorios para cada n entre 2**10 y 2**25 y set de consultas Q con 100 puntos
+    // =====================================================================================================
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    // Arreglo de queries
+    Query Q[100];
+
+    // Asignación de 100 puntos aleatorios y radio 0.02
+    for (int i = 0; i < 100; i++) {
+        Point p;
+        p.x = random_double();
+        p.y = random_double();
+
+        Q[i].q = p;
+        Q[i].r = 0.02;
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 100; i++) {
+        printf("Query %d - Point: (%lf, %lf)\n", i + 1, Q[i].q.x, Q[i].q.y);
+    }
+
+    // Puntos para testing de los métodos
+    int point_nums[16];
+    for (int i = 0; i < 16; i++) {
+        point_nums[i] = power_of_two(i + 10);
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 16; i++) {
+        printf("Array %i size: %i\n", i+1, point_nums[i]);
+    }
+
+    // Arreglo con punteros a cada arreglo de puntos
+    Point *P[16];
+
+    // Creamos puntos aleatorios para cada arreglo
+    for (int i = 0; i < 16; i++) {
+        P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
+        for (int j = 0; j < point_nums[i]; j++) {
+            P[i][j].x = random_double();
+            P[i][j].y = random_double();
+        }
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < point_nums[0]; i++) {
+        printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
+        if (i == 5) {
+            break;
+        }
+    }
+
+    // =======
+    // Testing
+    // =======
+
+    // 1. Ciaccia Patella
+    int cp_disk_acceses[16];
+
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    for (int i = 0; i < 1; i++) {
+        printf("Begin experiment\n");
+        Node *cp_tree = cpBulkLoading(P[i], power_of_two(i + 10));
+        printf("Passed algorithm\n");
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+            Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
+        }
+        cp_disk_acceses[i] = acceses;
+        printf("End experiment\n");
+    }
+    
+    // 2. Sexton Swinbank
+    int ss_disk_acceses[16];
+
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    for (int i = 0; i < 1; i++) {
+        // Node *ss_tree = sextonSwinbank(&P[i], point_nums[i]);
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+        //    Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
+        }
+        ss_disk_acceses[i] = acceses;
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 1; i++) {
+        printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
+        // printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
+    }
+
+    // Liberamos memoria de cada arreglo
+    for (int i = 0; i < 16; i++) {
+        free(P[i]);
+    }
+    
+    return 0;
 }

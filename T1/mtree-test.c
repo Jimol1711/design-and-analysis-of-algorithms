@@ -105,12 +105,15 @@ int main() {
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
     for (int i = 0; i < 1; i++) {
+        printf("Begin experiment\n");
         Node *cp_tree = cpBulkLoading(P[i], power_of_two(i + 10));
+        printf("Passed algorithm\n");
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
             Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
         }
         cp_disk_acceses[i] = acceses;
+        printf("End experiment\n");
     }
     
     // 2. Sexton Swinbank
