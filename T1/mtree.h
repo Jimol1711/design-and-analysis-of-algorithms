@@ -48,7 +48,7 @@ typedef struct {
 } SubsetStructure;
 
 // Function that calculates the Euclidean distance between two points
-double euclidian_distance(Point p1, Point p2) {
+double euclidean_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 }
 

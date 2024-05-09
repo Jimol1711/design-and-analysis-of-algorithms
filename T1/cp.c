@@ -1,10 +1,16 @@
 #include "mtree.h"
+#include <time.h>
 
+// Función que encuentra el mínimo entre dos ints
+int intMin(int i, int j) {
+    return i < j ? i : j;
+}
 
 // Function that returns a sample array of random unique points from a point set
 Point* getSamples(Point* point_set, int point_size, int sample_size) {
     int indices[sample_size]; // array that contains the selected indices of the points in the sample
-    Point samples[sample_size]; // array with the selected points 
+    Point *samples = (Point*)malloc(sample_size * sizeof(Point)); // allocate memory for the sample array
+
     srand(time(NULL)); // generate a seed given the current time
 
     // Add a point in the sample array
@@ -38,7 +44,7 @@ void deletePointFromArray(Point** array, int index, int array_size) {
 
 // Function that delete a node from an array
 void deleteNodeFromArray(Node** array, int index, int* array_size) {
-    for (int i=index; i < array_size - 1; i++) {
+    for (int i=index; i < *array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
     (*array_size)--;
@@ -49,6 +55,8 @@ void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int arra
     for (int i=index; i < array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
+
+    *array = (SubsetStructure*)realloc(*array, (array_size - 1) * sizeof(SubsetStructure));
 }
 
 // Function that adds a node to an array
@@ -153,7 +161,7 @@ void setCoveringRadius(Node *node) {
 
             // for each entry in the subtree, search the max distance between the entry point and the parent point
             for (int j=0; j < a_size; j++) {
-                double distance = euclidian_distance(p, a_entries[j].p); // distance between p and the point of the j entry of the subtree
+                double distance = euclidean_distance(p, a_entries[j].p); // distance between p and the point of the j entry of the subtree
                 if (distance > maxDistance)
                     maxDistance = distance;
             }
@@ -188,17 +196,19 @@ Node* cpBulkLoading(Point* P, int P_size) {
     
     int F_size; // sample size of F
     Point *F; // array F containing samples chosen at random from P
-    SubsetStructure samples_subsets[F_size]; // array that contains, for each element, the Fk array and its size
+    SubsetStructure *samples_subsets;
 
     do {
         // STEP 2
 
-        F_size = min(B, P_size/B); 
-        F = getSamples(P, P_size, F_size); 
+        F_size = intMin(B, P_size/B); 
+        F = getSamples(P, P_size, F_size);
+
+        samples_subsets = (SubsetStructure*)malloc(F_size * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
 
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
         for (int i=0; i<F_size; i++) {
-            SubsetStructure newSubsetStructure = {F[i], 0, NULL};
+            SubsetStructure newSubsetStructure = {F[i], NULL, 0};
             samples_subsets[i] = newSubsetStructure;
         }
 
@@ -209,12 +219,12 @@ Node* cpBulkLoading(Point* P, int P_size) {
         for (int i=0; i<P_size; i++) {
             Point p = P[i]; // get the point P[i]
 
-            double nearest_distance = euclidian_distance(p, F[0]);
+            double nearest_distance = euclidean_distance(p, F[0]);
             int nearest_sample_index = 0;
 
             // evaluate for each sample point in F
             for (int j=1; j<F_size; j++) {
-                int distance = euclidian_distance(p, F[j]);
+                int distance = euclidean_distance(p, F[j]);
                 if (distance < nearest_distance) {
                     nearest_distance = distance;
                     nearest_sample_index = j;
@@ -248,12 +258,12 @@ Node* cpBulkLoading(Point* P, int P_size) {
                 for (int i=0; i < Fj_size; i++) {
                     Point p = Fj_array[i]; // get the point Fj[i]
 
-                    double nearest_distance = euclidian_distance(p, F[0]);
+                    double nearest_distance = euclidean_distance(p, F[0]);
                     int nearest_sample_index = 0;
 
                     // Found the nearest subset Fl for the point p (Fj[i])
                     for (int l = 1; l < F_size; l++) {
-                        double distance = euclidian_distance(p, F[l]);
+                        double distance = euclidean_distance(p, F[l]);
                         if (distance < nearest_distance) {
                             nearest_distance = distance;
                             nearest_sample_index = l;
@@ -288,7 +298,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
         if (Fj_size > 0) { // if |Fj| > 0
 
             // Recursively call cpBulkLoading for each subset Fj
-            Node* Tj = CP(Fj_array, Fj_size);
+            Node* Tj = cpBulkLoading(Fj_array, Fj_size);
 
 
             // STEP 7
@@ -311,7 +321,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
                     // "the relevant point is added to F" 
                     Point subtree_point = Tj_entry.p; // point of the Tj entry
-                    addPointToArray(&F, subtree_point, F_size); // add the point to F
+                    addPointToArray(&F, subtree_point, &F_size); // add the point to F
                 }
             }
 

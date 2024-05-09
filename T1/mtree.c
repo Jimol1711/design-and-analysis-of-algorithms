@@ -8,14 +8,15 @@
 void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
     Point q = Q.q; // query point
     double r = Q.r; // query radio
-    int num_entries = node->num_entries; // number of entries in the node
-    Entry* entries = node->entries; // Array of entries of the node
+    int num_entries = sizeof(node) / sizeof(Entry); // number of entries in the node
+    Entry* entries = node->entries; // node Entry array
 
     // If the node is a leaf, search each entry that satisfy the condition of distance.
     // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
     if (is_leaf(node)) {
+        (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
-            if(euclidian_distance(entries[i].p, q) <= r) {
+            if(euclidean_distance(entries[i].p, q) <= r) {
                 *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
                 (*sol_array)[*array_size] = q;
                 (*array_size)++;
@@ -24,9 +25,9 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     }
     // if is not a leaf, for each entry, if satisfy this distance condition go down to check its child node 'a'
     else {
+        (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
-            if(euclidian_distance(entries[i].p, q) <= entries[i].cr + r){
-                (*disk_accesses)++;
+            if(euclidean_distance(entries[i].p, q) <= entries[i].cr + r){
                 range_search(entries[i].a, Q, sol_array, array_size, disk_accesses);
             }
         }
@@ -34,22 +35,10 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
 }
 
 // Function that search the points that lives inside the ball specified in the query
-Point* search_points_in_radio(Node* node, Query Q) {
+Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
     Point* sol_array = NULL; // Initialize the solutions array as null
     int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
-    int disk_accesses = 1; // Disk accesses count. Starts in 1 because we start to search in the node inmediately
 
-    range_search(node, Q, &sol_array, &array_size, &disk_accesses); // We occupy the range_search auxiliar function
-    return sol_array; // return the array solutions with the points found
-}
-
-
-void main() {
-    // Para compilar: gcc mtree.c -o mtree -lm
-    // Para ejecutar: ./mtree
-
-    // Determinar tamano de B
-    printf("tamano de entrada: %i\n", sizeof(Entry));
-    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
-
+    range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
+    return sol_array; // return the array solutions with the points found   
 }
