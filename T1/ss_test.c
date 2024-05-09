@@ -1,7 +1,131 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
+#include <time.h>
 
-#include "mtree.h"
+#define B 128
+#define b 64
+
+typedef struct node Node;
+typedef struct entry Entry;
+typedef struct point Point;
+typedef struct query Query;
+typedef struct subsetstructure SubsetStructure;
+
+// Structure of a point
+struct point {
+    double x, y;
+};
+
+// Structure of an entry
+struct entry {
+    Point p; // point
+    double cr; // covering radius
+    Node *a; // disk address to the root of the covering tree
+};
+
+
+// Structure of a Node
+struct node {
+    Entry *entries;
+    int num_entries;
+};
+
+// Structure of a query to search points in an Mtree
+struct query {
+    Point q;
+    double r;
+};
+
+// Structure that represents a sample subset (F_j)
+// Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
+struct subsetstructure {
+    Point point;
+    Point* sample_subset;
+    int subset_size;
+};
+
+// Function that calculates the Euclidean distance between two points p1 and p2
+double euclidean_distance(Point p1, Point p2) {
+    return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
+}
+
+// Function that tells whether a node is a leaf or not.
+int is_leaf(Node* node) {
+    int num_entries = sizeof(node) / sizeof(Entry);
+    Entry* entries = node->entries;
+    for (int i=0; i < num_entries; i++) {
+        if (entries[i].cr != 0.0 || entries[i].a != NULL)
+            return 0;
+    }
+    return 1;
+}
+
+void covering_radius(Node *node) {
+    if (is_leaf(node)) {
+        for (int i = 0; i < node->num_entries; i++) {
+            node->entries[i].cr = 0.0;
+        }
+    } else {
+        for (int i = 0; i < node->num_entries; i++) {
+            double max_distance = 0.0;
+            for (int j = 0; j < node->num_entries; j++) {
+                double distance = euclidean_distance(node->entries[i].p, node->entries[j].p);
+                if (distance > max_distance) {
+                    max_distance = distance;
+                }
+            }
+            node->entries[i].cr = max_distance;
+        }
+    }
+}
+
+// Function that creates a node
+Node* create_node() {
+    Node* node = (Node*)malloc(B * sizeof(Entry));
+    covering_radius(node);
+    return node;
+}
+
+// Auxiliary function that adds the solutions (points) that satisfy the condition in a node entry
+void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
+    Point q = Q.q; // query point
+    double r = Q.r; // query radio
+    int num_entries = sizeof(node) / sizeof(Entry); // number of entries in the node
+    Entry* entries = node->entries; // node Entry array
+
+    // If the node is a leaf, search each entry that satisfy the condition of distance.
+    // if the entry satisfies it, then increase the sol_array length and add the point to sol_array
+    if (is_leaf(node)) {
+        (*disk_accesses)++;
+        for (int i=0; i<num_entries; i++) {
+            if(euclidean_distance(entries[i].p, q) <= r) {
+                *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
+                (*sol_array)[*array_size] = q;
+                (*array_size)++;
+            }
+        }
+    }
+    // if is not a leaf, for each entry, if satisfy this distance condition go down to check its child node 'a'
+    else {
+        (*disk_accesses)++;
+        for (int i=0; i<num_entries; i++) {
+            if(euclidean_distance(entries[i].p, q) <= entries[i].cr + r){
+                range_search(entries[i].a, Q, sol_array, array_size, disk_accesses);
+            }
+        }
+    }
+}
+
+// Function that search the points that lives inside the ball specified in the query
+Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
+    Point* sol_array = NULL; // Initialize the solutions array as null
+    int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
+
+    range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
+    return sol_array; // return the array solutions with the points found   
+}
 
 typedef struct {
     Point *points;
@@ -221,16 +345,16 @@ double min(double i, double j) {
 }
 
 // Función que añade un Cluster a un ClusterArray
-void addCluster(ClusterArray C, Cluster c) {
-    if (C.size == 0) {
-        C.clusters = (Cluster *)malloc(sizeof(Cluster));
-        C.clusters[C.size] = c;
-        C.size++;
+void addCluster(ClusterArray* C, Cluster* c) {
+    if (C->size == 0) {
+        C->clusters = (Cluster *)malloc(sizeof(Cluster));
+        C->clusters[C->size] = *c;
+        C->size++;
     }
     else {
-        C.clusters = (Cluster *)realloc(C.clusters, (C.size + 1) * sizeof(Cluster));
-        C.clusters[C.size] = c;
-        C.size++;
+        C->clusters = (Cluster *)realloc(C->clusters, (C->size + 1) * sizeof(Cluster));
+        C->clusters[C->size] = *c;
+        C->size++;
     }
 }
 
@@ -255,7 +379,7 @@ void removeCluster(ClusterArray* C, Cluster* c) {
 }
 
 // Función que añade una entrada a un nodo
-void addEntryInNode(Node N, Entry e) {
+void addEntryInNode(Node* N, Entry* e) {
     /* Caso por si dejamos el arreglo de entradas sin tamaño fijo */
     /*
     if (N.num_entries == 0) {
@@ -269,12 +393,12 @@ void addEntryInNode(Node N, Entry e) {
         N.num_entries++;
     }
     */
-   N.entries[N.num_entries] = e;
-   N.num_entries++;
+   N->entries[N->num_entries] = *e;
+   N->num_entries++;
 }
 
 // Función que añade un punto a un cluster
-void addPointInCluster(Cluster C, Point p) {
+void addPointInCluster(Cluster C, Point p) {    // ################################# empecé a cambiar desde acá y dejó de funcionar
     if (C.size == 0) {
         C.points = (Point *)malloc(sizeof(Point));
         C.points[C.size] = p;
@@ -358,20 +482,23 @@ ClusterArray cluster(Cluster C_in) {
         exit(1);
     }
     /* 1. */
+    // printf("paso 1 cluster\n");
     Cluster *C_out_clusters;
     ClusterArray C_out = {C_out_clusters, 0};
     Cluster *C_clusters;
     ClusterArray C = {C_clusters, 0};
     /* 2. */
+    // printf("paso 2 cluster\n");
     for (int i = 0; i < C_in.size; i++) {
         /* añadir {p} a C */
         Point p = C_in.points[i];
         Point *pp = (Point *)malloc(sizeof(Point));
         pp[0] = p;
         Cluster C_p = {pp, 1}; // {p}
-        addCluster(C, C_p);
+        addCluster(&C, &C_p);
     }
     /* 3. */
+    // printf("paso 3 cluster\n");
     while (C.size > 1) {
         ClusterArray C_mas_cercanos = closest_pair(C);
         Cluster c1, c2;
@@ -387,16 +514,18 @@ ClusterArray cluster(Cluster C_in) {
             removeCluster(&C, &c1);
             removeCluster(&C, &c2);
             Cluster c_union = merge_clusters(c1,c2);
-            addCluster(C, c_union);
+            addCluster(&C, &c_union);
         }
         else {
             removeCluster(&C, &c1);
-            addCluster(C_out, c1);
+            addCluster(&C_out, &c1);
         }
     }
     /* 4. */
+    // printf("paso 4 cluster\n");
     Cluster c = C.clusters[0];
     /* 5. */
+    // printf("paso 5 cluster\n");
     Cluster c_prima;
     if (C_out.size > 0) {
         c_prima = closest_neighbor(c, C_out); 
@@ -407,107 +536,241 @@ ClusterArray cluster(Cluster C_in) {
         Cluster c_prima = {c_prima_points, 0};
     }
     /* 6. */
+    // printf("paso 6 cluster\n");
     if ((c.size + c_prima.size) <= B) {
         /* añadimos (c U c_prima) a C_out*/
         Cluster c_union_prima = merge_clusters(c, c_prima);
-        addCluster(C_out, c_union_prima);
+        addCluster(&C_out, &c_union_prima);
     }
     else {
         Cluster c_union_prima = merge_clusters(c, c_prima);
         ClusterArray minMaxCluster = MinMaxSplitPolicy(c_union_prima);
         Cluster c1 = minMaxCluster.clusters[0];
         Cluster c2 = minMaxCluster.clusters[1];
-        addCluster(C_out, c1);
-        addCluster(C_out, c2);
+        addCluster(&C_out, &c1);
+        addCluster(&C_out, &c2);
     }
     /* 7. */
+    // printf("paso 7 cluster\n");
     return C_out;
 }
 
 Entry OutputHoja(Cluster C_in) {
     /* 1. */
+    // printf("paso 1 hoja\n");
     Point g = primary_medoid(&C_in);
     double r = 0;
     Node C;
-    Entry *C_entries = C.entries;
+    Entry C_entries[B];
+    C.entries = C_entries;
     C.num_entries = 0;
     /* 2. */
+    // printf("paso 2 hoja\n");
     for (int i = 0; i < C_in.size; i++) {
         Point p = C_in.points[i];
-        Entry new_entry = {p, 0., NULL};
-        addEntryInNOde(C, new_entry);
-        r = max(r, euclidian_distance(g,p));
+        Entry new_entry = {p, 0.0, NULL};
+        addEntryInNode(&C, &new_entry);
+        r = max(r, euclidean_distance(g,p));
     }
     /* 3. */
+    // printf("paso 3 hoja\n");
     Node *a = &C;
     /* 4. */
+    // printf("paso 4 hoja\n");
     Entry out = {g, r, a};
     return out;
 }
 
 Entry OutputInterno(EntryArray C_mra) {
     /* 1. */
+    // printf("paso 1 interno\n");
     Cluster C_in = pointsInEntryArray(C_mra);
     Point G = primary_medoid(&C_in);
-    double R = 0.;
+    double R = 0.0;
     Node C;
-    Entry *C_entries = C.entries;
+    Entry C_entries[B];
+    C.entries = C_entries;
     C.num_entries = 0;
     /* 2. */
+    // printf("paso 2 interno\n");
     for (int i = 0; i < C_mra.size; i++) {
         Entry new_entry = C_mra.entries[i];
-        addEntryInNode(C, new_entry);
-        R = max(R, euclidian_distance(G,new_entry.p) + new_entry.cr);
+        addEntryInNode(&C, &new_entry);
+        R = max(R, euclidean_distance(G,new_entry.p) + new_entry.cr);
     }
     /* 3. */
+    // printf("paso 3 interno\n");
     Node *A = &C;
     /* 4. */
+    // printf("paso 4 interno\n");
     Entry out = {G, R, A};
     return out;
 }
 
-Node *AlgoritmoSS(Point* P, int P_size) {
+Node *sextonSwinbank(Point* P, int P_size) {
     Cluster C_in = {P, P_size};
     /* 1. */
+    // printf("paso 1 ss\n");
     if (C_in.size <= B) {
         Entry res = OutputHoja(C_in);
         return res.a;
     }
     /* 2. */
+    // printf("paso 2 ss\n");
     ClusterArray C_out = cluster(C_in);
     Entry *C_entries;
     EntryArray C = {C_entries, 0};
     /* 3. */
+    // printf("paso 3 ss\n");
     for (int i = 0; i < C_out.size; i++) {
         Cluster c = C_out.clusters[i];
         Entry hoja_c = OutputHoja(c);
         addEntryInEntryArray(C, hoja_c);
     }
     /* 4. */
+    // printf("paso 4 ss\n");
     while (C.size > B) {
         /* 4.1 */
+        // printf("paso 4.1 ss\n");
         Cluster C_in = pointsInEntryArray(C);
         ClusterArray C_out = cluster(C_in);
         EntryArray *C_mra_array_entries;
         EntryArrayArray C_mra = {C_mra_array_entries, 0};
         /* 4.2 */
+        // printf("paso 4.2 ss\n");
         for (int i = 0; i < C_out.size; i++) {
             Cluster c = C_out.clusters[i];
             EntryArray s = entriesWithPointInCluster(C, c);
             addEntryArrayInEntryArrayArray(C_mra, s);
         }
         /* 4.3 */
+        // printf("paso 4.3 ss\n");
         Entry *C_entries;
         EntryArray C = {C_entries, 0};
         /* 4.4 */
+        // printf("paso 4.4 ss\n");
         for (int i = 0; i < C_mra.size; i++) {
             EntryArray s = C_mra.entries_array[i];
-            Entry interno_s = OutputInterno(s);
+            Entry interno_s = OutputInterno(s); // problema aquí
             addEntryInEntryArray(C, interno_s);
         }
     }
     /* 5. */
+    // printf("paso 5 ss\n");
     Entry res = OutputInterno(C);
     /* 6. */
+    // printf("paso 6 ss\n");
     return res.a;
+}
+
+// Function that returns a random double value between 0 and 1
+double random_double() {
+    return (double)rand() / RAND_MAX;
+}
+
+// Function that returns two to the exponent
+int power_of_two(int exponent) {
+    int result = 1;
+    for (int i = 0; i < exponent; i++) {
+        result *= 2;
+    }
+    return result;
+}
+
+int main() {
+
+    // ======================
+    // Determinar tamano de B
+    // ======================
+
+    /*
+    printf("tamano de entrada: %i\n", sizeof(Entry));
+    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
+    */
+
+    // =====================================================================================================
+    // Creación set de puntos aleatorios para cada n entre 2**10 y 2**25 y set de consultas Q con 100 puntos
+    // =====================================================================================================
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    // Arreglo de queries
+    Query Q[100];
+
+    // Asignación de 100 puntos aleatorios y radio 0.02
+    for (int i = 0; i < 100; i++) {
+        Point p;
+        p.x = random_double();
+        p.y = random_double();
+
+        Q[i].q = p;
+        Q[i].r = 0.02;
+    }
+    /*
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 100; i++) {
+        printf("Query %d - Point: (%lf, %lf)\n", i + 1, Q[i].q.x, Q[i].q.y);
+    }
+    */
+    // Puntos para testing de los métodos
+    int point_nums[16];
+    for (int i = 0; i < 16; i++) {
+        point_nums[i] = power_of_two(i + 9);   // ######################################## cantidad de puntos
+    }
+    /*
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 16; i++) {
+        printf("Array %i size: %i\n", i+1, point_nums[i]);
+    }
+    */
+    // Arreglo con punteros a cada arreglo de puntos
+    Point *P[16];
+
+    // Creamos puntos aleatorios para cada arreglo
+    for (int i = 0; i < 16; i++) {
+        P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
+        for (int j = 0; j < point_nums[i]; j++) {
+            P[i][j].x = random_double();
+            P[i][j].y = random_double();
+        }
+    }
+    /*
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < point_nums[0]; i++) {
+        printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
+        if (i == 5) {
+            break;
+        }
+    }
+    */
+    // =======
+    // Testing
+    // =======
+    
+    // Sexton Swinbank
+    int ss_disk_acceses[16];
+
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    for (int i = 0; i < 1; i++) {
+        Node *ss_tree = sextonSwinbank(P[i], point_nums[i]);
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+        Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
+        }
+        ss_disk_acceses[i] = acceses;
+    }
+
+    // Imprimimos para probar que funcionó
+    for (int i = 0; i < 1; i++) {
+        printf("SS acceses for set %i: %i", i + 1, ss_disk_acceses[i]);
+        // printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
+    }
+
+    // Liberamos memoria de cada arreglo
+    for (int i = 0; i < 16; i++) {
+        free(P[i]);
+    }
+    
+    return 0;
 }
