@@ -125,7 +125,3 @@ Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
     range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
     return sol_array; // return the array solutions with the points found   
 }
-
-void main() {
-    
-}

@@ -42,8 +42,23 @@ void addCluster(ClustersArray C, ClusterStruct c) {
 // Función que quita un cluster de un conjunto de clusters
 /* IMPLEMENTAR */
 void removeCluster(ClustersArray C, ClusterStruct c) {
-    printf("Function not implemented");
+    printf("removeClusters not implemented");
     exit(1);
+}
+
+// Función que devuelve un puntero a un arreglo de entradas con puntos en el conjunto C de entradas
+EntryArray entriesWithPointInCluster(EntryArray C, ClusterStruct c) {
+    EntryArray entries;
+    entries.self = (Entry *)malloc(c.size * sizeof(Entry));
+    entries.size = c.size;
+    for (int i = 0; i < c.size; i++) {
+        if (c.self[i].x == C.self[i].p.x && c.self[i].y == C.self[i].p.y) {
+            entries.self[i] = C.self[i];
+        } else {
+            continue;
+        }
+    }
+    return entries;
 }
 
 // Función que encuentra el medoide primario de un cluster
@@ -228,9 +243,16 @@ ClustersArray Cluster(ClusterStruct C_in) {
     while(C.size > 1) {
         // Parte 3.1 (Aquí la condición |c1| >= |c2| se revisa distinto, quizás falle)
         ClustersArray C_closest = closest_pair(C);
-        ClusterStruct c1 = C_closest.self[0];
-        ClusterStruct c2 = C_closest.self[1];
+        ClusterStruct c1, c2;
         // Parte 3.2
+        if (C_closest.self[0].size >= C_closest.self[1].size){
+            ClusterStruct c1 = C_closest.self[0];
+            ClusterStruct c2 = C_closest.self[1];
+        }
+        else {
+            ClusterStruct c1 = C_closest.self[1];
+            ClusterStruct c2 = C_closest.self[0];
+        }
         if (c1.size + c2.size <= B) {
             removeCluster(C, c1);
             removeCluster(C, c2);
@@ -240,9 +262,6 @@ ClustersArray Cluster(ClusterStruct C_in) {
         } else if (c1.size >= c2.size) {
             removeCluster(C, c1);
             addCluster(C_out, c1);
-        } else {
-            removeCluster(C, c2);
-            addCluster(C_out, c2);
         }
     }
 
@@ -251,11 +270,12 @@ ClustersArray Cluster(ClusterStruct C_in) {
 
     // Parte 5.
     ClusterStruct c_prime;
+    Point *c_prime_points;
     if (C_out.size > 0) {
         c_prime = closest_neighbor(c, C_out);
         removeCluster(C_out, c_prime);
     } else {
-        ClusterStruct c_prime = {NULL, 0};
+        ClusterStruct c_prime = {c_prime_points, 0};
     }
 
     // Parte 6.
@@ -280,13 +300,15 @@ Entry OutputHoja(ClusterStruct C_in) {
     // Parte 1.
     Point g = primary_medoid(C_in);
     double r = 0.0;
-    Node C; 
+    Node C;
+    Entry *entries = C.entries;
+    entries = (Entry *)malloc(C_in.size * sizeof(Entry));
 
     // Parte 2.
     for (int i = 0; i < C_in.size; i++) {
         Point p = C_in.self[i];
         Entry ent = {p, 0.0, NULL};
-        C.entries[i] = ent; // Esto puede fallar porque no se va a llenar el nodo
+        C.entries[i] = ent; // Esto puede fallar porque no se va a llenar el nodo, si es ptr debería funcionar
         r = max(r, euclidean_distance(g, p));
     }
 
@@ -334,7 +356,14 @@ Entry OutputInterno(EntryArray C_mra) {
 }
 
 // Función que realiza el algoritmo ss sobre un conjunto de puntos, retorna el árbol construido
-Node *sextonSwinbank(ClusterStruct C_in) {
+Node *sextonSwinbank(Point *set, int set_size) {
+
+    ClusterStruct C_in;
+    C_in.size = set_size;
+    C_in.self = (Point *)malloc(set_size * sizeof(Point));
+    for (int i = 0; i < set_size; i++) {
+        C_in.self[i] = set[i];
+    }
 
     // Parte 1.
     if (C_in.size <= B) {
@@ -357,8 +386,23 @@ Node *sextonSwinbank(ClusterStruct C_in) {
 
     // Parte 4.
     while(C.size > B) {
+        ClusterStruct _C_in;
+        _C_in.self = (Point *)malloc(C.size * sizeof(Point));
+        _C_in.size = C.size;
+
         for (int i = 0; i < C.size; i++) {
-            
+            _C_in.self[i] = C.self[i].p;
         }
+
+        ClustersArray _C_out = Cluster(_C_in);
+
+        EntryArray C_mra;
+
+        for (int i = 0; i < _C_out.size; i++) {
+            EntryArray s = entriesWithPointInCluster(C, _C_out.self[i]);
+
+        } 
+
+        free(_C_in.self);
     }
 }
