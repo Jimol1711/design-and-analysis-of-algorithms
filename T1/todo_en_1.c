@@ -163,8 +163,8 @@ Point* getSamples(Point* point_set, int point_size, int sample_size) {
                     break;
                 }
             }
-            if (iter >= 30) {
-                printf("fail");
+            if (iter >= 100) {
+                printf("fail 1\n");
                 exit(1);
             }
         }
@@ -344,13 +344,13 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
     // printf("Begin Step 2\n");
     int iter = 0;
-    if (iter >= 30) {
-        printf("fail");
-        exit(1);
-    }
+
     do {
         // STEP 2
-
+        if (iter >= 1000) {
+            printf("fail 2 because F_size = %i\n", F_size);
+            exit(1);
+        }
         // F_size = intMin(B, P_size / B); 
         F = getSamples(P, P_size, F_size); 
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array

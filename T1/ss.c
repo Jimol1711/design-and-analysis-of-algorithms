@@ -6,6 +6,7 @@
 typedef struct clusterstruct ClusterStruct;
 typedef struct clustersarray ClustersArray;
 typedef struct entryarray EntryArray;
+typedef struct entryarrayarray EntryArrayArray;
 
 // Estructura para poder almacenar el tamaño de un cluster
 struct clusterstruct {
@@ -26,6 +27,11 @@ struct entryarray {
     int size;
 };
 
+struct {
+    EntryArray *entries_array;
+    int size;
+};
+
 // Función que añade un cluster a un conjunto de clusters
 void addCluster(ClustersArray C, ClusterStruct c) {
     if (C.size == 0) {
@@ -40,10 +46,23 @@ void addCluster(ClustersArray C, ClusterStruct c) {
 }
 
 // Función que quita un cluster de un conjunto de clusters
-/* IMPLEMENTAR */
 void removeCluster(ClustersArray C, ClusterStruct c) {
-    printf("removeClusters not implemented");
-    exit(1);
+    /* buscamos la posición del cluster a eliminar */
+    int i;
+    for (i = 0; i < C.size; i++) {
+        ClusterStruct *cluster = &C.self[i];
+        if (cluster == &c) {
+            break;
+        }
+    }
+    /* movemos los clusters de la derecha */
+    for (int j = i; j < C.size -1; j++) {
+        C.self[j] = C.self[j+1];
+    }
+    /* redimensionamos el arreglo */
+    C.self = realloc(C.self, (C.size - 1) * sizeof(Cluster));
+    /* actualizamos el tamaño */
+    C.size--;
 }
 
 // Función que devuelve un puntero a un arreglo de entradas con puntos en el conjunto C de entradas
@@ -171,9 +190,6 @@ ClustersArray closest_pair(ClustersArray clustersSet) {
 /* ARREGLAR */
 ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
 
-    printf("MinMaxSplitPolicy not working");
-    exit(1);
-
     ClustersArray divided_clusters;
     divided_clusters.size = 2;
     divided_clusters.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
@@ -265,6 +281,79 @@ double min(double i, double j) {
     return i < j ? i : j;
 }
 
+// Función que añade una entrada a un nodo
+void addEntryInNode(Node N, Entry e) {
+    /* Caso por si dejamos el arreglo de entradas sin tamaño fijo */
+    
+    if (N.num_entries == 0) {
+        N.entries = (Entry *)malloc(sizeof(Entry));
+        N.entries[N.num_entries] = e;
+        N.num_entries++;
+    }
+    else {
+        N.entries = (Entry *)realloc(N.entries, (N.num_entries + 1) * sizeof(Entry));
+        N.entries[N.num_entries] = e;
+        N.num_entries++;
+    }
+    
+   // N.entries[N.num_entries] = e;
+   // N.num_entries++;
+}
+
+// Función que añade un punto a un cluster
+void addPointInCluster(ClusterStruct C, Point p) {
+    if (C.size == 0) {
+        C.self = (Point *)malloc(sizeof(Point));
+        C.self[C.size] = p;
+        C.size++;
+    }
+    else {
+        C.self = (Point *)realloc(C.self, (C.size + 1) * sizeof(Point));
+        C.self[C.size] = p;
+        C.size++;
+    }
+}
+
+// Función que retorna un Cluster con los puntos dentrode un arreglo de entradas
+ClusterStruct pointsInEntryArray(EntryArray E) {
+    Point *C_points;
+    ClusterStruct C = {C_points, 0};
+    for (int i = 0; i < E.size; i++) {
+        Entry e = E.self[i];
+        Point e_point = e.p;
+        addPointInCluster(C, e_point);
+    }
+    return C;
+}
+
+// Función que añade una entrada a un arreglo de entradas
+void addEntryInEntryArray(EntryArray E, Entry e) {
+    if (E.size == 0) {
+        E.self = (Entry *)malloc(sizeof(Entry));
+        E.self[E.size] = e;
+        E.size++;
+    }
+    else {
+        E.self = (Entry *)realloc(E.self, (E.size + 1) * sizeof(Entry));
+        E.self[E.size] = e;
+        E.size++;
+    }
+}
+
+// Función que añade un arreglo de entradas a un arreglo de arreglos de entradas
+void addEntryArrayInEntryArrayArray(EntryArrayArray EE, EntryArray E) {
+    if (EE.size == 0) {
+        EE.entries_array = (EntryArray *)malloc(sizeof(EntryArray));
+        EE.entries_array[EE.size] = E;
+        EE.size++;
+    }
+    else {
+        EE.entries_array = (EntryArray *)realloc(EE.entries_array, (EE.size + 1) * sizeof(EntryArray));
+        EE.entries_array[EE.size] = E;
+        EE.size++;
+    }
+}
+
 // Función que clusteriza un conjunto de puntos, devuelve conjunto de clusters
 ClustersArray Cluster(ClusterStruct C_in) {
 
@@ -353,6 +442,7 @@ Entry OutputHoja(ClusterStruct C_in) {
     Node C;
     Entry *entries = C.entries;
     entries = (Entry *)malloc(C_in.size * sizeof(Entry));
+    C.num_entries = C_in.size;
 
     // Parte 2.
     for (int i = 0; i < C_in.size; i++) {
@@ -386,6 +476,8 @@ Entry OutputInterno(EntryArray C_mra) {
     Point G = primary_medoid(C_in);
     double R = 0.0;
     Node C;
+    C.entries = malloc(C_mra.size * sizeof(Entry));
+    C.num_entries = C_mra.size;
 
     // Parte 2.
     for (int i = 0; i < C_mra.size; i++) {
