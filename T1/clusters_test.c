@@ -150,19 +150,33 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
     ClusterStruct c2;
     double min_max_radius = DBL_MAX;
 
+    // Initialize clusters c1 and c2
+    c1.size = 0;
+    c1.self = (Point*)malloc(cluster.size * sizeof(Point));
+    c2.size = 0;
+    c2.self = (Point*)malloc(cluster.size * sizeof(Point));
+
     for (int i = 0; i < cluster.size; i++) {
         for (int j = i + 1; j < cluster.size; j++) {
             if (i == j) {
                 continue;
             }
+
             // Initialize clusters c1 and c2
-            c1.size = 0;
+            c1.size = 1;
             c1.self = (Point*)malloc(cluster.size * sizeof(Point));
-            c2.size = 0;
+            c2.size = 1;
             c2.self = (Point*)malloc(cluster.size * sizeof(Point));
+
+            c1.self[0] = cluster.self[i];
+            c2.self[0] = cluster.self[j];
 
             for (int k = 0; k < cluster.size; k++) {
                 if (k == i || k==j) {
+                    continue;
+                }
+
+                if (cluster.self[k].x == 0.0 && cluster.self[k].y == 0.0) {
                     continue;
                 }
                 
@@ -206,15 +220,7 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
                 min_max_radius = max_covering_radius;
                 divided_clusters.self[0] = c1;
                 divided_clusters.self[1] = c2;
-            } else {
-                // Reinitialize clusters c1 and c2
-                c1.size = 0;
-                Point *new_c1 = (Point*)realloc(c1.self, cluster.size * sizeof(Point));
-                c1.self = new_c1;
-                c2.size = 0;
-                Point *new_c2 = (Point*)realloc(c2.self, cluster.size * sizeof(Point));
-                c2.self = new_c2;               
-            }
+            } 
         }
     }
     free(c1.self);
@@ -298,8 +304,9 @@ int main() {
 
     // Borrar esto
     // Sample points
-    Point points[] = {{0.1, 0.2}, {0.4, 0.5}, {0.3, 0.4}, {0.7, 0.6}, {0.9, 0.8}};
-    int num_points = 5;
+    Point points[] = {{0.1, 0.2}, {0.4, 0.5}, {0.3, 0.4}, {0.7, 0.6}, {0.9, 0.8}, 
+                    {0.5, 0.6}, {0.8, 0.5}, {0.1, 0.4}, {0.7, 0.9}};
+    int num_points = 10;
 
     // Create a cluster with the sample points
     ClusterStruct cluster;
