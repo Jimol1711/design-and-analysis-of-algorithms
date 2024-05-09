@@ -11,6 +11,7 @@ typedef struct node Node;
 typedef struct entry Entry;
 typedef struct point Point;
 typedef struct query Query;
+typedef struct subsetstructure SubsetStructure;
 
 // Structure of a point
 struct point {
@@ -39,11 +40,11 @@ struct query {
 
 // Structure that represents a sample subset (F_j)
 // Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
-typedef struct {
+struct subsetstructure {
     Point point;
     Point* sample_subset;
     int subset_size;
-} SubsetStructure;
+};
 
 // Function that calculates the Euclidean distance between two points p1 and p2
 double euclidean_distance(Point p1, Point p2) {

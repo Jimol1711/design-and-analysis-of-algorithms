@@ -179,29 +179,79 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
     divided_clusters.self = (ClusterStruct*)malloc(2 * sizeof(ClusterStruct));
     ClusterStruct c1;
     ClusterStruct c2;
+    double min_max_radius = DBL_MAX;
 
     for (int i = 0; i < cluster.size; i++) {
-        for (int j = 0; j < cluster.size; j++) {
+        for (int j = i + 1; j < cluster.size; j++) {
             if (i == j) {
                 continue;
             }
+            // Initialize clusters c1 and c2
+            c1.size = 0;
+            c1.self = (Point*)malloc(cluster.size * sizeof(Point));
+            c2.size = 0;
+            c2.self = (Point*)malloc(cluster.size * sizeof(Point));
+
             for (int k = 0; k < cluster.size; k++) {
                 if (k == i || k==j) {
                     continue;
                 }
-                // Initialize clusters c1 and c2
-                c1.size = 0;
-                c1.self = (Point*)malloc(cluster.size * sizeof(Point));
-                c2.size = 0;
-                c2.self = (Point*)malloc(cluster.size * sizeof(Point));
                 
-                double i_dist = euclidean_distance(cluster.self[i], cluster.self[i]);
+                double i_dist = euclidean_distance(cluster.self[i], cluster.self[k]);
                 double j_dist = euclidean_distance(cluster.self[j], cluster.self[k]);
+
+                if (i_dist < j_dist) {
+                    c1.size++;
+                    Point *added_c1 = (Point *)realloc(c1.self, c1.size * sizeof(Point));
+                    c1.self = added_c1;
+                    c1.self[c1.size - 1] = cluster.self[k];
+                } else if (i_dist > j_dist) {
+                    c2.size++;
+                    Point *added_c2 = (Point *)realloc(c2.self, c2.size * sizeof(Point));
+                    c2.self = added_c2;
+                    c2.self[c2.size - 1] = cluster.self[k];
+                }
 
             }
 
+            double max_covering_radius = 0.0;
+
+            for (int n = 0; n < c1.size; n++) {
+                if (n == i || n == j || n >= c1.size) {
+                    continue;
+                }
+                if (euclidean_distance(c1.self[n], cluster.self[i]) > max_covering_radius) {
+                    max_covering_radius = euclidean_distance(c1.self[n], cluster.self[i]);
+                }
+            }
+            for (int m = 0; m < c2.size; m++) {
+                if (m == i || m == j || m >= c2.size) {
+                    continue;
+                    }
+                if (euclidean_distance(c2.self[m], cluster.self[i]) > max_covering_radius) {
+                    max_covering_radius = euclidean_distance(c2.self[m], cluster.self[i]);
+                }
+            }
+
+            if (max_covering_radius < min_max_radius) {
+                min_max_radius = max_covering_radius;
+                divided_clusters.self[0] = c1;
+                divided_clusters.self[1] = c2;
+            } else {
+                // Reinitialize clusters c1 and c2
+                c1.size = 0;
+                Point *new_c1 = (Point*)realloc(c1.self, cluster.size * sizeof(Point));
+                c1.self = new_c1;
+                c2.size = 0;
+                Point *new_c2 = (Point*)realloc(c2.self, cluster.size * sizeof(Point));
+                c2.self = new_c2;               
+            }
         }
     }
+    free(c1.self);
+    free(c2.self);
+
+    return divided_clusters;
 
 }
 

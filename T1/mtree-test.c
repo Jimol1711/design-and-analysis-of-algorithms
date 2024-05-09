@@ -4,10 +4,9 @@
 #include <time.h>
 
 #include "mtree.c"
-// #include "cp.c"
+#include "cp.c"
 // #include "ss.c"
 
-// De aquí en adelante es mtree-test.c
 // Function that returns a random double value between 0 and 1
 double random_double() {
     return (double)rand() / RAND_MAX;
@@ -92,6 +91,9 @@ int main() {
     // Imprimimos para probar que funcionó
     for (int i = 0; i < point_nums[0]; i++) {
         printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
+        if (i == 5) {
+            break;
+        }
     }
 
     // =======
@@ -102,17 +104,15 @@ int main() {
     int cp_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
-    /*
-    for (int i = 0; i < 16; i++) {
-        Node *cp_tree = cpBulkLoading(&P[i], power_of_two(i + 10));
+    for (int i = 0; i < 1; i++) {
+        Node *cp_tree = cpBulkLoading(P[i], power_of_two(i + 10));
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
             Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
         }
         cp_disk_acceses[i] = acceses;
     }
-    */
-
+    
     // 2. Sexton Swinbank
     int ss_disk_acceses[16];
 
@@ -128,8 +128,8 @@ int main() {
 
     // Imprimimos para probar que funcionó
     for (int i = 0; i < 1; i++) {
-        // printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
-        printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
+        printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
+        // printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
     }
 
     // Liberamos memoria de cada arreglo

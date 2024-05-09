@@ -152,9 +152,9 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
 
     for (int i = 0; i < cluster.size; i++) {
         for (int j = i + 1; j < cluster.size; j++) {
-            // if (i == j) {
-            //    continue;
-            // }
+            if (i == j) {
+                continue;
+            }
             // Initialize clusters c1 and c2
             c1.size = 0;
             c1.self = (Point*)malloc(cluster.size * sizeof(Point));
