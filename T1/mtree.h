@@ -55,9 +55,7 @@ double euclidian_distance(Point p1, Point p2) {
 // Function to create a new node
 Node* create_node() {
     Node* node = (Node*)malloc(sizeof(Node));
-    if (node) {
-        node->num_entries = 0;
-    }
+    node->num_entries = 0;
     return node;
 }
 

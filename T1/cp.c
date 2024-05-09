@@ -127,6 +127,44 @@ void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
     }
 }
 
+// Function that set the covering radius of each subtree of a node
+void setCoveringRadius(Node *node) {
+    Entry* node_entries = node->entries; // entries from the node
+    int entries_size = node->num_entries; // number of entries of the node
+
+    // if the node is a leaf, the covering radius of his entries are equal to 0.0
+    if (is_leaf(node)) {
+        // for each entry, set the covering radio as 0.0
+        for (int i=0; i < entries_size; i++) {
+            node_entries[i].cr = 0.0;
+        }
+    }
+
+    else {
+        // for each entry of the node, set his covering radius
+        for (int i=0; i < entries_size; i++) {
+            Point p = node_entries[i].p; // point p of the entry
+            Node *a = node_entries[i].a; // subtree of the node
+
+            Entry* a_entries = a->entries; // entries of the subtree
+            int a_size = a->num_entries; // size of the entries of the subtree
+
+            double maxDistance = 0; // set the initial max distance as 0
+
+            // for each entry in the subtree, search the max distance between the entry point and the parent point
+            for (int j=0; j < a_size; j++) {
+                double distance = euclidian_distance(p, a_entries[j].p); // distance between p and the point of the j entry of the subtree
+                if (distance > maxDistance)
+                    maxDistance = distance;
+            }
+
+            node_entries[i].cr = maxDistance; // set the covering radius for the entry
+
+            setCoveringRadius(a); // recursion on subtrees
+        }
+    }
+}
+
 Node* cpBulkLoading(Point* P, int P_size) {
     // STEP 1
 
@@ -259,10 +297,8 @@ Node* cpBulkLoading(Point* P, int P_size) {
             // if Tj size is less than b
             if (Tj_size < b) {
                 deletePointFromArray(&F, j, F_size); // delete p_fj from F
-                // deleteSubsetStructureFromArray(&samples_subsets, j, F_size); // delete if F_j should be deleted too
                 F_size--; // F size is reduced
 
-                // esta parte esta muy dudosa, pero imagino esto segun el enunciado:
                 Entry *Tj_entries = Tj->entries; // Entry array of the root
 
                 // for each entry of Tj
@@ -276,7 +312,6 @@ Node* cpBulkLoading(Point* P, int P_size) {
                     // "the relevant point is added to F" 
                     Point subtree_point = Tj_entry.p; // point of the Tj entry
                     addPointToArray(&F, subtree_point, F_size); // add the point to F
-                    // ADD STRUCTURE TO ARRAY?
                 }
             }
 
@@ -321,7 +356,6 @@ Node* cpBulkLoading(Point* P, int P_size) {
         else {
             // delete the respective point j in F
             deletePointFromArray(&F, j, F_size);
-            // deleteSubsetStructureFromArray(&samples_subsets, j, F_size); // delete if F_j should be deleted too
             F_size--;
 
             Entry* Tj_entries = Tj->entries;
@@ -338,7 +372,6 @@ Node* cpBulkLoading(Point* P, int P_size) {
                     addNodeToArray(&T_prime, *subtree, &T_prime_size); // add this node to T_prime
                     Point root_point = Tj_entry.p; // root point of the subtree of height h
                     addPointToArray(&F, root_point, &F_size); // add the root point to F
-                    // ADD STRUCTURE TO ARRAY if when a point p_i is added to F, then a subsetstructure is added to samples subsets corresponding to that point
                 }
             }
         }
@@ -362,4 +395,12 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
     // STEP 12
 
+    // set the covering radius for each entry of T_sup
+    setCoveringRadius(T_sup);
+
+
+    // STEP 13
+
+    // return T_sup
+    return T_sup;
 }
