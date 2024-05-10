@@ -184,9 +184,9 @@ double clusterDist(Cluster c1, Cluster c2) {
 }
 
 // Función que devuelve el vecino más cercano de un cluster en clustersSet
-Cluster closest_neighbor(Cluster cluster, ClusterArray clustersSet) {
+int closest_neighbor(Cluster cluster, ClusterArray clustersSet) {
 
-    Cluster closest_neighbor = cluster;
+    int closest_neighbor;
     double min_cluster_dist = __DBL_MAX__;
     
     for (int i = 0; i < clustersSet.size; i++) {
@@ -200,7 +200,7 @@ Cluster closest_neighbor(Cluster cluster, ClusterArray clustersSet) {
 
         if (dist < min_cluster_dist && dist != 0) {
             min_cluster_dist = dist;
-            closest_neighbor = i_cluster;
+            closest_neighbor = i;
         }
     }
     return closest_neighbor;
@@ -225,26 +225,21 @@ Cluster merge_clusters(Cluster c1, Cluster c2) {
 }
 
 // Función que encuentra el par más cercano en un set de clusters, retorna arreglo con los dos clusters
-ClusterArray closest_pair(ClusterArray clustersSet) {
+int* closest_pair(ClusterArray* clustersSet) {
 
-    ClusterArray closest_pair;
-    closest_pair.size = 2;
-    closest_pair.clusters = (Cluster*)malloc(2 * sizeof(Cluster));
-    
-    Cluster c1;
-    Cluster c2;
+    int* closest_pair = (int*)malloc(2 * sizeof(int));
     double min_dist = __DBL_MAX__;
 
-    for (int i = 0; i < clustersSet.size; i++) {
-        for (int j = 0; j < clustersSet.size; j++) {
+    for (int i = 0; i < clustersSet->size; i++) {
+        for (int j = 0; j < clustersSet->size; j++) {
             if (i == j) {
                 continue;
             }
-            double dist = clusterDist(clustersSet.clusters[i], clustersSet.clusters[j]);
+            double dist = clusterDist(clustersSet->clusters[i], clustersSet->clusters[j]);
             if (dist < min_dist && dist != 0) {
                 min_dist = dist;
-                closest_pair.clusters[0] = clustersSet.clusters[i];
-                closest_pair.clusters[1] = clustersSet.clusters[j];
+                closest_pair[0] = i;
+                closest_pair[1] = j;
             }
         }
     }
@@ -359,27 +354,15 @@ void addCluster(ClusterArray* C, Cluster* c) {
 }
 
 // Función que elimina un cluster de un arreglo de clusters
-void removeCluster(ClusterArray* C, Cluster* c) {
-
-    // buscamos la posición del cluster a eliminar
-    int i;
-    for (i = 0; i < C->size; i++) {
-        Cluster *cluster = &C->clusters[i];
-        if (cluster == c) {
-            printf("Here?");
-            break;
-        }
+void removeCluster(ClusterArray* C, int pos) {
+    /* movemos los clusters de la derecha */
+    for (int i = pos; i < C->size-1; i++) {
+        C->clusters[i] = C->clusters[i+1];
     }
-
-    // movemos los clusters de la derecha
-    for (int j = i; j < C->size -1; j++) {
-        C->clusters[j] = C->clusters[j+1];
-    }
-    // redimensionamos el arreglo
-    C->clusters = realloc(C->clusters, (C->size - 1)  * sizeof(Cluster));
-    // actualizamos el tamaño
+    /* redimensionamos el arreglo */
+    C->clusters = realloc(C->clusters, (C->size - 1) * sizeof(Cluster));
+    /* actualizamos el tamaño */
     C->size--;
-
 }
 
 // Función que añade una entrada a un nodo
@@ -402,16 +385,16 @@ void addEntryInNode(Node* N, Entry* e) {
 }
 
 // Función que añade un punto a un cluster
-void addPointInCluster(Cluster C, Point p) {    // ################################# empecé a cambiar desde acá y dejó de funcionar
-    if (C.size == 0) {
-        C.points = (Point *)malloc(sizeof(Point));
-        C.points[C.size] = p;
-        C.size++;
+void addPointInCluster(Cluster* C, Point* p) {    // ################################# empecé a cambiar desde acá y dejó de funcionar
+    if (C->size == 0) {
+        C->points = (Point *)malloc(sizeof(Point));
+        C->points[C->size] = *p;
+        C->size++;
     }
     else {
-        C.points = (Point *)realloc(C.points, (C.size + 1) * sizeof(Point));
-        C.points[C.size] = p;
-        C.size++;
+        C->points = (Point *)realloc(C->points, (C->size + 1) * sizeof(Point));
+        C->points[C->size] = *p;
+        C->size++;
     }
 }
 
@@ -422,22 +405,22 @@ Cluster pointsInEntryArray(EntryArray E) {
     for (int i = 0; i < E.size; i++) {
         Entry e = E.entries[i];
         Point e_point = e.p;
-        addPointInCluster(C, e_point);
+        addPointInCluster(&C, &e_point);
     }
     return C;
 }
 
 // Función que añade una entrada a un arreglo de entradas
-void addEntryInEntryArray(EntryArray E, Entry e) {
-    if (E.size == 0) {
-        E.entries = (Entry *)malloc(sizeof(Entry));
-        E.entries[E.size] = e;
-        E.size++;
+void addEntryInEntryArray(EntryArray* E, Entry* e) {
+    if (E->size == 0) {
+        E->entries = (Entry *)malloc(sizeof(Entry));
+        E->entries[E->size] = *e;
+        E->size++;
     }
     else {
-        E.entries = (Entry *)realloc(E.entries, (E.size + 1) * sizeof(Entry));
-        E.entries[E.size] = e;
-        E.size++;
+        E->entries = (Entry *)realloc(E->entries, (E->size + 1) * sizeof(Entry));
+        E->entries[E->size] = *e;
+        E->size++;
     }
 }
 
@@ -460,48 +443,44 @@ EntryArray entriesWithPointInCluster(EntryArray E, Cluster c) {
     for (int i = 0; i < E.size; i++) {
         Entry e = E.entries[i];
         if (isInCLuster(e,c)) {
-            addEntryInEntryArray(new_E, e);
+            addEntryInEntryArray(&new_E, &e);
         }
     }
     return new_E;
 }
 
 // Función que añade un arreglo de entradas a un arreglo de arreglos de entradas
-void addEntryArrayInEntryArrayArray(EntryArrayArray EE, EntryArray E) {
-    if (EE.size == 0) {
-        EE.entries_array = (EntryArray *)malloc(sizeof(EntryArray));
-        EE.entries_array[EE.size] = E;
-        EE.size++;
+void addEntryArrayInEntryArrayArray(EntryArrayArray* EE, EntryArray* E) {
+    if (EE->size == 0) {
+        EE->entries_array = (EntryArray *)malloc(sizeof(EntryArray));
+        EE->entries_array[EE->size] = *E;
+        EE->size++;
     }
     else {
-        EE.entries_array = (EntryArray *)realloc(EE.entries_array, (EE.size + 1) * sizeof(EntryArray));
-        EE.entries_array[EE.size] = E;
-        EE.size++;
+        EE->entries_array = (EntryArray *)realloc(EE->entries_array, (EE->size + 1) * sizeof(EntryArray));
+        EE->entries_array[EE->size] = *E;
+        EE->size++;
     }
 }
 
-int cluster_call = 0;
-int hoja_call = 0;
-int interno_call = 0;
-int ss_call = 0;
-
 ClusterArray cluster(Cluster C_in) {
-
-    cluster_call++;
-    printf("cluster call nr: %i\n", cluster_call);
-
+    /*
+    for (size_t i = 0; i < C_in.size; i++){
+        printf("Point %i: (%lf, %lf)\n", i + 1, C_in.points[i].x, C_in.points[i].y);
+    }
+    */
     if (C_in.size < b) {
         printf("El tamaño del set de puntos es menor a b.\n");
         exit(1);
     }
     /* 1. */
-    // printf("paso 1 cluster\n");
+    printf("paso 1 cluster\n");
     Cluster *C_out_clusters;
     ClusterArray C_out = {C_out_clusters, 0};
     Cluster *C_clusters;
     ClusterArray C = {C_clusters, 0};
     /* 2. */
-    // printf("paso 2 cluster\n");
+    printf("paso 2 cluster\n");
     for (int i = 0; i < C_in.size; i++) {
         /* añadir {p} a C */
         Point p = C_in.points[i];
@@ -511,48 +490,59 @@ ClusterArray cluster(Cluster C_in) {
         addCluster(&C, &C_p);
     }
     /* 3. */
-    // printf("paso 3 cluster\n");
-    while (C.size > 1) {
-        ClusterArray C_mas_cercanos = closest_pair(C);
-        Cluster c1, c2;
-
-        if (C_mas_cercanos.clusters[0].size >= C_mas_cercanos.clusters[1].size){
-            Cluster c1 = C_mas_cercanos.clusters[0];
-            Cluster c2 = C_mas_cercanos.clusters[1]; // Enters this if
+    printf("paso 3 cluster\n");
+    /* -------------------------------------------------------ClusterArray C pareciera estar guardando bien los {p}-------------------------------------------------
+    for (size_t i = 0; i < C.size; i++){
+        printf("Point %i: (%lf, %lf)\n", i + 1, C.clusters[i].points[0].x, C.clusters[i].points[0].y);
+    }
+    */
+    while (C.size > 1) { /*-------------------------------pareciera estar bien ahora---------------------------*/
+        int* pos_C_mas_cercanos = closest_pair(&C);
+        int pos_c1, pos_c2;
+        if (C.clusters[pos_C_mas_cercanos[0]].size >= C.clusters[pos_C_mas_cercanos[1]].size){
+            pos_c1 = pos_C_mas_cercanos[0];
+            pos_c2 = pos_C_mas_cercanos[1];
         }
         else {
-            Cluster c1 = C_mas_cercanos.clusters[1];
-            Cluster c2 = C_mas_cercanos.clusters[0];
+            pos_c1 = pos_C_mas_cercanos[1];
+            pos_c2 = pos_C_mas_cercanos[0];
         }
+        Cluster c1, c2;
+        c1 = C.clusters[pos_c1];
+        c2 = C.clusters[pos_c2];
         if ((c1.size + c2.size) <= B) {
-            removeCluster(&C, &c1);
-            removeCluster(&C, &c2);
+            removeCluster(&C, pos_c1);
+            removeCluster(&C, pos_c2);
             Cluster c_union = merge_clusters(c1,c2);
             addCluster(&C, &c_union);
         }
         else {
-            removeCluster(&C, &c1); // Enters this else
+            removeCluster(&C, pos_c1);
             addCluster(&C_out, &c1);
         }
     }
-    
+    /*
+    printf("%d\n", C.size);
+    printf("%d\n", C_out.size);
+    */
     /* 4. */
-     printf("paso 4 cluster\n");
+    printf("paso 4 cluster\n");
     Cluster c = C.clusters[0];
     /* 5. */
-     printf("paso 5 cluster\n");
+    printf("paso 5 cluster\n");
     Cluster c_prima;
+    int pos_c_prima;
     if (C_out.size > 0) {
-        c_prima = closest_neighbor(c, C_out); 
-        removeCluster(&C_out, &c_prima);
+        pos_c_prima = closest_neighbor(c, C_out); 
+        c_prima = C_out.clusters[pos_c_prima];
+        removeCluster(&C_out, pos_c_prima);
     }
     else {
         Point *c_prima_points;
         Cluster c_prima = {c_prima_points, 0};
     }
-
     /* 6. */
-    // printf("paso 6 cluster\n");
+    printf("paso 6 cluster\n");
     if ((c.size + c_prima.size) <= B) {
         /* añadimos (c U c_prima) a C_out*/
         Cluster c_union_prima = merge_clusters(c, c_prima);
@@ -567,17 +557,13 @@ ClusterArray cluster(Cluster C_in) {
         addCluster(&C_out, &c2);
     }
     /* 7. */
-    // printf("paso 7 cluster\n");
+    printf("paso 7 cluster\n");
     return C_out;
 }
 
 Entry OutputHoja(Cluster C_in) {
-
-    hoja_call++;
-    printf("hoja call nr: %i\n", hoja_call);
-
     /* 1. */
-    // printf("paso 1 hoja\n");
+    printf("paso 1 hoja\n");
     Point g = primary_medoid(&C_in);
     double r = 0;
     Node C;
@@ -585,7 +571,7 @@ Entry OutputHoja(Cluster C_in) {
     C.entries = C_entries;
     C.num_entries = 0;
     /* 2. */
-    // printf("paso 2 hoja\n");
+    printf("paso 2 hoja\n");
     for (int i = 0; i < C_in.size; i++) {
         Point p = C_in.points[i];
         Entry new_entry = {p, 0.0, NULL};
@@ -593,21 +579,18 @@ Entry OutputHoja(Cluster C_in) {
         r = max(r, euclidean_distance(g,p));
     }
     /* 3. */
-    // printf("paso 3 hoja\n");
+    printf("paso 3 hoja\n");
     Node *a = &C;
     /* 4. */
-    // printf("paso 4 hoja\n");
+    printf("paso 4 hoja\n");
     Entry out = {g, r, a};
     return out;
 }
 
 Entry OutputInterno(EntryArray C_mra) {
-
-    interno_call++;
-    printf("interno call nr: %i\n", interno_call);
-
+    // printf("%d\n", C_mra.size);
     /* 1. */
-    // printf("paso 1 interno\n");
+    printf("paso 1 interno\n");
     Cluster C_in = pointsInEntryArray(C_mra);
     Point G = primary_medoid(&C_in);
     double R = 0.0;
@@ -616,79 +599,82 @@ Entry OutputInterno(EntryArray C_mra) {
     C.entries = C_entries;
     C.num_entries = 0;
     /* 2. */
-    // printf("paso 2 interno\n");
+    printf("paso 2 interno\n");
     for (int i = 0; i < C_mra.size; i++) {
         Entry new_entry = C_mra.entries[i];
         addEntryInNode(&C, &new_entry);
         R = max(R, euclidean_distance(G,new_entry.p) + new_entry.cr);
     }
     /* 3. */
-    // printf("paso 3 interno\n");
+    printf("paso 3 interno\n");
     Node *A = &C;
     /* 4. */
-    // printf("paso 4 interno\n");
+    printf("paso 4 interno\n");
     Entry out = {G, R, A};
     return out;
 }
 
 Node *sextonSwinbank(Point* P, int P_size) {
-
-    ss_call++;
-    printf("ss call nr: %i\n", ss_call);
-
     Cluster C_in = {P, P_size};
     /* 1. */
-    // printf("paso 1 ss\n");
+    printf("paso 1 ss\n");
     if (C_in.size <= B) {
         Entry res = OutputHoja(C_in);
         return res.a;
     }
-
     /* 2. */
-    // printf("paso 2 ss\n");
+    printf("paso 2 ss\n");
     ClusterArray C_out = cluster(C_in);
+    // printf("%d\n", C_out.size);
+    /*
+    for (int i=0; i < C_out.size; i++) {
+        printf("%d\n", C_out.clusters[2].size);
+    }
+    */
     Entry *C_entries;
     EntryArray C = {C_entries, 0};
     /* 3. */
-    // printf("paso 3 ss\n");
+    printf("paso 3 ss\n");
     for (int i = 0; i < C_out.size; i++) {
         Cluster c = C_out.clusters[i];
         Entry hoja_c = OutputHoja(c);
-        addEntryInEntryArray(C, hoja_c);
+        addEntryInEntryArray(&C, &hoja_c);
     }
     /* 4. */
-    // printf("paso 4 ss\n");
+    printf("paso 4 ss\n");
     while (C.size > B) {
         /* 4.1 */
-        // printf("paso 4.1 ss\n");
+        printf("paso 4.1 ss\n");
         Cluster C_in = pointsInEntryArray(C);
         ClusterArray C_out = cluster(C_in);
         EntryArray *C_mra_array_entries;
         EntryArrayArray C_mra = {C_mra_array_entries, 0};
         /* 4.2 */
-        // printf("paso 4.2 ss\n");
+        printf("paso 4.2 ss\n");
         for (int i = 0; i < C_out.size; i++) {
             Cluster c = C_out.clusters[i];
             EntryArray s = entriesWithPointInCluster(C, c);
-            addEntryArrayInEntryArrayArray(C_mra, s);
+            if (s.size != 0) {
+                addEntryArrayInEntryArrayArray(&C_mra, &s);
+            }
         }
         /* 4.3 */
-        // printf("paso 4.3 ss\n");
+        printf("paso 4.3 ss\n");
         Entry *C_entries;
         EntryArray C = {C_entries, 0};
         /* 4.4 */
-        // printf("paso 4.4 ss\n");
+        printf("paso 4.4 ss\n");
         for (int i = 0; i < C_mra.size; i++) {
             EntryArray s = C_mra.entries_array[i];
-            Entry interno_s = OutputInterno(s); // problema aquí
-            addEntryInEntryArray(C, interno_s);
+            Entry interno_s = OutputInterno(s);
+            addEntryInEntryArray(&C, &interno_s);
         }
     }
     /* 5. */
-    // printf("paso 5 ss\n");
+    printf("paso 5 ss\n");
     Entry res = OutputInterno(C);
     /* 6. */
-    // printf("paso 6 ss\n");
+    printf("paso 6 ss\n");
     return res.a;
 }
 
@@ -744,8 +730,8 @@ int main() {
     */
     // Puntos para testing de los métodos
     int point_nums[16];
-    for (int i = 0; i < 16; i++) {
-        point_nums[i] = power_of_two(i + 9);   // ######################################## cantidad de puntos
+    for (int i = 0; i < 1; i++) {
+        point_nums[i] = power_of_two(i + 10);   // ######################################## cantidad de puntos
     }
     /*
     // Imprimimos para probar que funcionó
@@ -757,7 +743,7 @@ int main() {
     Point *P[16];
 
     // Creamos puntos aleatorios para cada arreglo
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 1; i++) {
         P[i] = (Point*)malloc(point_nums[i] * sizeof(Point));
         for (int j = 0; j < point_nums[i]; j++) {
             P[i][j].x = random_double();
@@ -768,9 +754,6 @@ int main() {
     // Imprimimos para probar que funcionó
     for (int i = 0; i < point_nums[0]; i++) {
         printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
-        if (i == 5) {
-            break;
-        }
     }
     */
     // =======
@@ -785,7 +768,7 @@ int main() {
         Node *ss_tree = sextonSwinbank(P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
-            Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
+        Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
         }
         ss_disk_acceses[i] = acceses;
     }
@@ -793,12 +776,13 @@ int main() {
     // Imprimimos para probar que funcionó
     for (int i = 0; i < 1; i++) {
         printf("SS acceses for set %i: %i", i + 1, ss_disk_acceses[i]);
+        // printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
     }
 
     // Liberamos memoria de cada arreglo
     for (int i = 0; i < 16; i++) {
         free(P[i]);
-    } 
+    }
     
     return 0;
 }
