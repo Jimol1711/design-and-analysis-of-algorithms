@@ -180,7 +180,7 @@ int intMin(int i, int j) {
 // Función que implementa el método de construcción CP
 Node* ciacciaPatella(Point* P, int P_size) {
     // STEP 1
-    printf("Begin Step 1\n");
+    printf("CP Step 1\n");
     // If the number of points in the point set is less or equal to B.
     if (P_size <= B) {
         // Then create a new Node structure (it will be a leaf)
@@ -197,29 +197,25 @@ Node* ciacciaPatella(Point* P, int P_size) {
 
         return newNode;
     }
-    printf("End Step 1\n");
     
     int F_size = intMin(B, P_size / B); // sample size of F
     Point *F; // array F containing samples chosen at random from P
     SubsetStructure samples_subsets[F_size]; // array that contains, for each element, the Fk array and its size
 
-    printf("Begin Step 2\n");
     do {
+        F_size = intMin(B, P_size / B);
         // STEP 2
-
+        printf("CP Step 2\n");
         // F_size = intMin(B, P_size / B); 
         F = getSamples(P, P_size, F_size); 
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
-        for (int i=0; i < F_size; i++) {
-
-            printf("Size of F: %i\n", F_size);
-            
+        for (int i=0; i < F_size; i++) {            
             SubsetStructure newSubsetStructure = {F[i], NULL, 0};
             samples_subsets[i] = newSubsetStructure;
         }
-        printf("Step 3\n");
-        // STEP 3
 
+        // STEP 3
+        printf("CP Step 3\n"); 
         // For each point in the point set, assign to the nearest sample
         for (int i=0; i<P_size; i++) {
             Point p = P[i]; // get the point P[i]
@@ -243,8 +239,8 @@ Node* ciacciaPatella(Point* P, int P_size) {
             addPointToArray(Fj_array, p, Fj_size); // add P[i] to Fj
         }
 
-        printf("Step 4\n");
         // STEP 4. Redistribution
+        printf("CP Step 4\n");
         // STEP 4.1
         for (int j=0; j<F_size; j++) { // for each Fj
             SubsetStructure subset = samples_subsets[j]; // subset structure of Fj
@@ -288,10 +284,10 @@ Node* ciacciaPatella(Point* P, int P_size) {
         }
 
     } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
-    printf("Passed Step 5\n");
+    printf("CP Step 5\n");
 
     // STEP 6
-    printf("Step 6\n");
+    printf("CP Step 6\n");
     Node* T = NULL; // array where we will save every Tj obtained from F
     int T_size = 0;
 
@@ -307,7 +303,7 @@ Node* ciacciaPatella(Point* P, int P_size) {
 
 
             // STEP 7
-            printf("Step 7\n");
+            printf("CP Step 7\n");
             int Tj_size = Tj->num_entries; // size of the Tj array of entries
 
             // if Tj size is less than b
@@ -338,7 +334,7 @@ Node* ciacciaPatella(Point* P, int P_size) {
     }
 
     // STEP 8
-    printf("Step 7\n");
+    printf("CP Step 8\n");
     // found h
     int h; // min height of the Tj trees
     h = treeHeight(&T[0]); // set the first subtree height as the minimum
@@ -358,7 +354,7 @@ Node* ciacciaPatella(Point* P, int P_size) {
 
 
     // STEP 9
-    printf("Step 9\n");
+    printf("CP Step 9\n");
     // for each Tj 
     for (int j=0; j < T_size; j++) {
         Node *Tj = &T[j]; // Tj
@@ -393,12 +389,12 @@ Node* ciacciaPatella(Point* P, int P_size) {
     }
 
     // STEP 10
-    printf("Step 10\n");
+    printf("CP Step 10\n");
     Node *T_sup = ciacciaPatella(F, F_size); // apply cp algorithm to F (sample array)
 
 
     //STEP 11
-    printf("Step 11\n");
+    printf("CP Step 11\n");
     int Tj_inserted; // variable that indicates if the Tj was inserted. It is useful to evite unnecesary iterations in joinTj recursive function
 
     // for each Tj in T_prime, insert Tj into the corresponding leaf in T_sup
@@ -409,12 +405,12 @@ Node* ciacciaPatella(Point* P, int P_size) {
     }
 
     // STEP 12
-    printf("Step 12\n");
+    printf("CP Step 12\n");
     // set the covering radius for each entry of T_sup
     setCoveringRadius(T_sup);
 
     // STEP 13
-    printf("Step 13\n");
+    printf("CP Step 13\n");
     // return T_sup
     return T_sup;
 }

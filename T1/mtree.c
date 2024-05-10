@@ -57,7 +57,6 @@ int is_leaf(Node* node) {
 // Función que crea un nodo
 Node* create_node() {
     Node* node = (Node*)malloc(B * sizeof(Entry));
-    covering_radius(node);
     return node;
 }
 

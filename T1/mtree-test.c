@@ -3,9 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "mtree.c"
-#include "cp.c"
-// #include "ss.c"
+#include "ss.c"
 
 // Function that returns a random double value between 0 and 1
 double random_double() {
@@ -86,11 +84,8 @@ int main() {
     }
 
     // Imprimimos 5 puntos del primer arreglo para probar que funcionó
-    for (int i = 0; i < point_nums[0]; i++) {
+    for (int i = 0; i < 5; i++) {
         printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
-        if (i == 5) {
-            break;
-        }
     }
 
     // =======
@@ -102,35 +97,38 @@ int main() {
     int cp_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    printf("Begin experiment\n");
+    printf("Begin cp algorithm\n");
     for (int i = 0; i < 1; i++) {
-        printf("Begin experiment\n");
-        Node *cp_tree = cpBulkLoading(P[i], power_of_two(i + 10));
-        printf("Passed algorithm\n");
+        Node *cp_tree = ciacciaPatella(P[i], power_of_two(i + 10));
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
             Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
         }
         cp_disk_acceses[i] = acceses;
-        printf("End experiment\n");
     }
+    printf("Passed cp algorithm\n");
     
     // 2. Sexton Swinbank
     // Arreglo con accesos a disco de cada número de puntos
     int ss_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    printf("Begin ss algorithm\n");
     for (int i = 0; i < 1; i++) {
-        Node *ss_tree = sextonSwinbank(&P[i], point_nums[i]);
+        Node *ss_tree = sextonSwinbank(P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
             Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
         }
         ss_disk_acceses[i] = acceses;
     }
+    printf("Passed ss algorithm\n");
+    printf("End experiment\n");
 
     // Imprimimos para probar que funcionó
     for (int i = 0; i < 1; i++) {
-        printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
+        printf("CP acceses for set %i: %i\n", i + 1, cp_disk_acceses[i]);
         printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
     }
 

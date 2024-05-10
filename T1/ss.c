@@ -1,7 +1,7 @@
 #include <stddef.h>
 #include <float.h>
 
-#include "mtree.c"
+#include "cp.c"
 
 typedef struct clusterstruct ClusterStruct;
 typedef struct clustersarray ClustersArray;
@@ -61,7 +61,7 @@ void removeCluster(ClustersArray C, ClusterStruct c) {
         C.self[j] = C.self[j+1];
     }
     /* redimensionamos el arreglo */
-    C.self = realloc(C.self, (C.size - 1) * sizeof(Cluster));
+    C.self = realloc(C.self, (C.size - 1) * sizeof(ClusterStruct));
     /* actualizamos el tamaño */
     C.size--;
 }
@@ -493,7 +493,6 @@ Entry OutputInterno(EntryArray C_mra) {
     Entry internal = {G, R, A};
 
     free(C_in.self);
-    free(C_in.size);
 
     return internal;
 }
