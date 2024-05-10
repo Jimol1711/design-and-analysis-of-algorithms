@@ -1,5 +1,15 @@
+#include "mtree.c"
 
-// Function that returns a sample array of random unique points from a point set
+typedef struct subsetstructure SubsetStructure;
+
+// Estructura que representa un conjunto de samples
+struct subsetstructure {
+    Point point;
+    Point* sample_subset;
+    int subset_size;
+};
+
+// Función que retorna un arreglo de sample_size samples del conjunto point_set
 Point* getSamples(Point* point_set, int point_size, int sample_size) {
     int indices[sample_size]; // array that contains the selected indices of the points in the sample
     Point *samples = malloc(sample_size * sizeof(Point)); // array with the selected points 
@@ -26,14 +36,14 @@ Point* getSamples(Point* point_set, int point_size, int sample_size) {
     return samples; // return the sample array
 }
 
-// Function that delete a point from an array
+// Función que borra un punto del arreglo array en la posición index
 void deletePointFromArray(Point** array, int index, int array_size) {
     for (int i=index; i < array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
 }
 
-// Function that delete a node from an array
+// Función que borra un nodo del arreglo array en la posición index
 void deleteNodeFromArray(Node** array, int index, int* array_size) {
     for (int i=index; i < (*array_size) - 1; i++) {
         (*array)[i] = (*array)[i+1];
@@ -41,34 +51,34 @@ void deleteNodeFromArray(Node** array, int index, int* array_size) {
     (*array_size)--;
 }
 
-// Function that delete an  from an array
+// Función que borra un subsetstructure del arreglo array en la posición index
 void deleteSubsetStructureFromArray(SubsetStructure* array, int index, int array_size) {
     for (int i=index; i < array_size - 1; i++) {
         array[i] = array[i+1];
     }
 }
 
-// Function that adds a node to an array
+// Función que agrega node al arreglo de nodos array
 void addNodeToArray(Node** array, Node node, int* array_size) {
     *array = (Node*)realloc(*array, (*array_size + 1) * sizeof(Node));
     (*array)[*array_size] = node;
     (*array_size)++;
 }
 
-// Function that adds a point to an array
+// Función que agrega point al arreglo de puntos array
 void addPointToArray(Point** array, Point point, int* array_size) {
     *array = (Point*)realloc(*array, (*array_size + 1) * sizeof(Point));
     (*array)[*array_size] = point;
     (*array_size)++;
 }
 
-// Function that insert an entry into the entries array of a node
+// Función que agrega una entrada al arreglo de entradas de un nodo
 void insertEntry(Node* node, Entry entry) {
     node->entries[node->num_entries] = entry;
     (node->num_entries)++;
 }
 
-// Function that calculates the height of a tree
+// Función que calcula la altura de un árbol
 int treeHeight(Node* node) {
     if (node == NULL) {
         return 0; // If the tree is empty, height is 0
@@ -86,7 +96,7 @@ int treeHeight(Node* node) {
     }
 }
 
-// Function that insert a 'Tj' node into the leaf of a 'node', where the leaf point is the same as the point of F[j].
+// Función que inserta un nodo 'Tj' en la hoja de un 'nodo', donde el punto de la hoja es el mismo que el punto de F[j]
 void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
     Entry *node_entries = node->entries; // entries of the node
     int entries_size = node->num_entries; // size of entries of the node
@@ -124,7 +134,7 @@ void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
     }
 }
 
-// Function that set the covering radius of each subtree of a node
+// Función que setea el radio cobertor de cada subárbol de un nodo
 void setCoveringRadius(Node *node) {
     Entry* node_entries = node->entries; // entries from the node
     int entries_size = node->num_entries; // number of entries of the node
@@ -167,7 +177,8 @@ int intMin(int i, int j) {
     return i < j ? i : j;
 }
 
-Node* cpBulkLoading(Point* P, int P_size) {
+// Función que implementa el método de construcción CP
+Node* ciacciaPatella(Point* P, int P_size) {
     // STEP 1
     printf("Begin Step 1\n");
     // If the number of points in the point set is less or equal to B.
@@ -190,9 +201,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
     
     int F_size = intMin(B, P_size / B); // sample size of F
     Point *F; // array F containing samples chosen at random from P
-    SubsetStructure samples_subsets; // array that contains, for each element, the Fk array and its size
-
-    samples_subsets.sample_subset = (Point *)malloc(F_size * sizeof(Point));
+    SubsetStructure samples_subsets[F_size]; // array that contains, for each element, the Fk array and its size
 
     printf("Begin Step 2\n");
     do {
@@ -206,7 +215,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
             printf("Size of F: %i\n", F_size);
             
             SubsetStructure newSubsetStructure = {F[i], NULL, 0};
-            samples_subsets.sample_subset[i] = newSubsetStructure.point;
+            samples_subsets[i] = newSubsetStructure;
         }
         printf("Step 3\n");
         // STEP 3
@@ -228,7 +237,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
             }
 
             // Add the point of P to the subset of the nearest sample
-            SubsetStructure* nearest_subset = &samples_subsets.sample_subset[nearest_sample_index]; // Obtain a pointer to the structure that references the subset of the nearest sample found
+            SubsetStructure* nearest_subset = &samples_subsets[nearest_sample_index]; // Obtain a pointer to the structure that references the subset of the nearest sample found
             Point** Fj_array = &(nearest_subset->sample_subset); // obtain a pointer to the Fj
             int* Fj_size = &(nearest_subset->subset_size); // obtain a pointer to the Fj size
             addPointToArray(Fj_array, p, Fj_size); // add P[i] to Fj
@@ -293,8 +302,8 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
         if (Fj_size > 0) { // if |Fj| > 0
 
-            // Recursively call cpBulkLoading for each subset Fj
-            Node* Tj = cpBulkLoading(Fj_array, Fj_size);
+            // Recursively call ciacciaPatella for each subset Fj
+            Node* Tj = ciacciaPatella(Fj_array, Fj_size);
 
 
             // STEP 7
@@ -385,7 +394,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
     // STEP 10
     printf("Step 10\n");
-    Node *T_sup = cpBulkLoading(F, F_size); // apply cp algorithm to F (sample array)
+    Node *T_sup = ciacciaPatella(F, F_size); // apply cp algorithm to F (sample array)
 
 
     //STEP 11

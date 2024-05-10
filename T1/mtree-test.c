@@ -23,16 +23,13 @@ int power_of_two(int exponent) {
 
 int main() {
 
+    // Linux
     // Para compilar: gcc mtree-test.c -o mtree-test -lm
-    // Para ejecutar: ./mtree
+    // Para ejecutar: ./mtree-test
 
-    // Test para la búsqueda (crear árbol y query, ver que devuelva los puntos en la query)
-
-    // Test de cp (contar accesos a disco en árbol construido con cp para n puntos, con n
-    // entre 2**10 y 2**25)
-
-    // Test de ss (contar accesos a disco en árbol construido con ss para n puntos, con n
-    // entre 2**10 y 2**25)
+    // Windows
+    // Para compilar: gcc mtree-test.c -o mtree-test.exe
+    // Para ejecutar: .\mtree-test.exe
 
     // ======================
     // Determinar tamano de B
@@ -44,7 +41,7 @@ int main() {
     // Creación set de puntos aleatorios para cada n entre 2**10 y 2**25 y set de consultas Q con 100 puntos
     // =====================================================================================================
 
-    // Seed the random number generator
+    // Seteo de semilla para el generador de números aleatorios
     srand(time(NULL));
 
     // Arreglo de queries
@@ -60,18 +57,18 @@ int main() {
         Q[i].r = 0.02;
     }
 
-    // Imprimimos para probar que funcionó
-    for (int i = 0; i < 100; i++) {
+    // Imprimimos 5 puntos para probar que funcionó
+    for (int i = 0; i < 5; i++) {
         printf("Query %d - Point: (%lf, %lf)\n", i + 1, Q[i].q.x, Q[i].q.y);
     }
 
-    // Puntos para testing de los métodos
+    // Arreglo de cantidades de puntos para testing de los métodos
     int point_nums[16];
     for (int i = 0; i < 16; i++) {
         point_nums[i] = power_of_two(i + 10);
     }
 
-    // Imprimimos para probar que funcionó
+    // Imprimimos las cantidades para probar que funcionó
     for (int i = 0; i < 16; i++) {
         printf("Array %i size: %i\n", i+1, point_nums[i]);
     }
@@ -88,7 +85,7 @@ int main() {
         }
     }
 
-    // Imprimimos para probar que funcionó
+    // Imprimimos 5 puntos del primer arreglo para probar que funcionó
     for (int i = 0; i < point_nums[0]; i++) {
         printf("Point %i: (%lf, %lf)\n", i + 1, P[0][i].x, P[0][i].y);
         if (i == 5) {
@@ -101,6 +98,7 @@ int main() {
     // =======
 
     // 1. Ciaccia Patella
+    // Arreglo con accesos a disco de cada número de puntos
     int cp_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
@@ -117,14 +115,15 @@ int main() {
     }
     
     // 2. Sexton Swinbank
+    // Arreglo con accesos a disco de cada número de puntos
     int ss_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
     for (int i = 0; i < 1; i++) {
-        // Node *ss_tree = sextonSwinbank(&P[i], point_nums[i]);
+        Node *ss_tree = sextonSwinbank(&P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
-        //    Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
+            Point *search = search_points_in_radio(ss_tree, Q[j], &acceses);
         }
         ss_disk_acceses[i] = acceses;
     }
@@ -132,7 +131,7 @@ int main() {
     // Imprimimos para probar que funcionó
     for (int i = 0; i < 1; i++) {
         printf("CP acceses for set %i: %i", i + 1, cp_disk_acceses[i]);
-        // printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
+        printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
     }
 
     // Liberamos memoria de cada arreglo

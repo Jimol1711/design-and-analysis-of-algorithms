@@ -13,12 +13,12 @@ typedef struct point Point;
 typedef struct query Query;
 typedef struct subsetstructure SubsetStructure;
 
-// Structure of a point
+// Estructura que representa un punto
 struct point {
     double x, y;
 };
 
-// Structure of an entry
+// Estructura que representa una entrada
 struct entry {
     Point p; // point
     double cr; // covering radius
@@ -26,32 +26,24 @@ struct entry {
 };
 
 
-// Structure of a Node
+// Estructura que representa un nodo
 struct node {
     Entry *entries;
     int num_entries;
 };
 
-// Structure of a query to search points in an Mtree
+// Estructura que representa una consulta
 struct query {
     Point q;
     double r;
 };
 
-// Structure that represents a sample subset (F_j)
-// Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
-struct subsetstructure {
-    Point point;
-    Point* sample_subset;
-    int subset_size;
-};
-
-// Function that calculates the Euclidean distance between two points p1 and p2
+// Función que calcula la distancia euclidiana entre p1 y p2
 double euclidean_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 }
 
-// Function that tells whether a node is a leaf or not.
+// Función que determina si un nodo es hoja o no
 int is_leaf(Node* node) {
     int num_entries = sizeof(node) / sizeof(Entry);
     Entry* entries = node->entries;
@@ -62,33 +54,14 @@ int is_leaf(Node* node) {
     return 1;
 }
 
-void covering_radius(Node *node) {
-    if (is_leaf(node)) {
-        for (int i = 0; i < node->num_entries; i++) {
-            node->entries[i].cr = 0.0;
-        }
-    } else {
-        for (int i = 0; i < node->num_entries; i++) {
-            double max_distance = 0.0;
-            for (int j = 0; j < node->num_entries; j++) {
-                double distance = euclidean_distance(node->entries[i].p, node->entries[j].p);
-                if (distance > max_distance) {
-                    max_distance = distance;
-                }
-            }
-            node->entries[i].cr = max_distance;
-        }
-    }
-}
-
-// Function that creates a node
+// Función que crea un nodo
 Node* create_node() {
     Node* node = (Node*)malloc(B * sizeof(Entry));
     covering_radius(node);
     return node;
 }
 
-// Auxiliary function that adds the solutions (points) that satisfy the condition in a node entry
+// Función que realiza la query Q en el árbol node, guardando los puntos en sol_array y calculando los accesos a disco en la dirección disk_accesses
 void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
     Point q = Q.q; // query point
     double r = Q.r; // query radio
@@ -118,7 +91,7 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     }
 }
 
-// Function that search the points that lives inside the ball specified in the query
+// Función que busca los puntos en la query Q del árbol node y guarda accesos a disco en la dirección disk_accesses
 Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
     Point* sol_array = NULL; // Initialize the solutions array as null
     int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)

@@ -8,31 +8,32 @@ typedef struct clustersarray ClustersArray;
 typedef struct entryarray EntryArray;
 typedef struct entryarrayarray EntryArrayArray;
 
-// Estructura para poder almacenar el tamaño de un cluster
+// Estructura que representa un Cluster
 struct clusterstruct {
     Point *self;
     int size;
     Point primary_medoid;
 };
 
-// Estructura para poder almacenar el tamaño de un conjunto de clusters
+// Estructura que representa un conjunto de clusters
 struct clustersarray {
     ClusterStruct *self;
     int size;
 };
 
-// Estructura para poder almacenar el tamaño de un conjunto de entradas
+// Estructura que representa un conjunto de entradas
 struct entryarray {
     Entry *self;
     int size;
 };
 
-struct {
+// Estructura que representa un conjunto de un conjunto de entradas
+struct entryarrayarray {
     EntryArray *entries_array;
     int size;
 };
 
-// Función que añade un cluster a un conjunto de clusters
+// Función que añade un cluster c a un conjunto de clusters C
 void addCluster(ClustersArray C, ClusterStruct c) {
     if (C.size == 0) {
         C.self = (ClusterStruct *)malloc(sizeof(ClusterStruct));
@@ -45,7 +46,7 @@ void addCluster(ClustersArray C, ClusterStruct c) {
     }
 }
 
-// Función que quita un cluster de un conjunto de clusters
+// Función que quita un cluster c de un conjunto de clusters C
 void removeCluster(ClustersArray C, ClusterStruct c) {
     /* buscamos la posición del cluster a eliminar */
     int i;
@@ -65,7 +66,7 @@ void removeCluster(ClustersArray C, ClusterStruct c) {
     C.size--;
 }
 
-// Función que devuelve un puntero a un arreglo de entradas con puntos en el conjunto C de entradas
+// Función que retorna un arreglo de entradas con las entradas en C que contienen puntos en el cluster c
 EntryArray entriesWithPointInCluster(EntryArray C, ClusterStruct c) {
     EntryArray entries;
     entries.self = (Entry *)malloc(c.size * sizeof(Entry));
@@ -80,7 +81,7 @@ EntryArray entriesWithPointInCluster(EntryArray C, ClusterStruct c) {
     return entries;
 }
 
-// Función que encuentra el medoide primario de un cluster
+// Función que retorna el medoide primario de un cluster
 Point primary_medoid(ClusterStruct cluster) {
     double min_radius = 0.0;
     Point primary_medoid = cluster.self[0];
@@ -108,7 +109,7 @@ Point primary_medoid(ClusterStruct cluster) {
     return primary_medoid;
 }
 
-// Función que calcula distancia entre dos clusters
+// Función que retorna distancia entre dos clusters (distancia entre sus medoides primarios)
 double clusterDist(ClusterStruct c1, ClusterStruct c2) {
     Point pm_c1 = primary_medoid(c1);
     Point pm_c2 = primary_medoid(c2);
@@ -116,7 +117,7 @@ double clusterDist(ClusterStruct c1, ClusterStruct c2) {
     return dist;
 }
 
-// Función que devuelve el vecino más cercano de un cluster en un conjunto de clusters
+// Función que retorna el vecino más cercano de un cluster en un conjunto de clusters
 ClusterStruct closest_neighbor(ClusterStruct cluster, ClustersArray clustersSet) {
 
     ClusterStruct closest_neighbor = cluster;
@@ -354,7 +355,7 @@ void addEntryArrayInEntryArrayArray(EntryArrayArray EE, EntryArray E) {
     }
 }
 
-// Función que clusteriza un conjunto de puntos, devuelve conjunto de clusters
+// Función que clusteriza un conjunto de puntos, retorna conjunto de clusters
 ClustersArray Cluster(ClusterStruct C_in) {
 
     if (C_in.size < b) {
