@@ -544,7 +544,6 @@ Node *sextonSwinbank(Point *set, int set_size) {
             EntryArray s = entriesWithPointInCluster(C, _C_out.self[i]);
 
         } 
-
         free(_C_in.self);
     }
 }
