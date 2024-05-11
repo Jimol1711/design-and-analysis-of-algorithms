@@ -34,17 +34,12 @@ typedef struct {
     double r;
 } Query;
 
-// Probablemente para mas adelante...
-typedef struct {
-    ;
-} Mtree;
-
 // Structure that represents a sample subset (F_j)
-// Esta estructura se llama igual que su campo que contiene un arreglo. Esto puede traer confusiones y podria escogerse nombres mas apropiados
 typedef struct {
     Point point;
     Point* sample_subset;
     int subset_size;
+    int working;
 } SubsetStructure;
 
 // Function that calculates the Euclidean distance between two points

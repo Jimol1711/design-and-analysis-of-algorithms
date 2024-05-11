@@ -1,62 +1,27 @@
 #include "mtree.h"
 #include <time.h>
+#include <float.h>
 
 // Función que encuentra el mínimo entre dos ints
 int intMin(int i, int j) {
     return i < j ? i : j;
 }
 
-// Function that returns a sample array of random unique points from a point set
-Point* getSamples(Point* point_set, int point_size, int sample_size) {
-    int indices[sample_size]; // array that contains the selected indices of the points in the sample
-    Point *samples = (Point*)malloc(sample_size * sizeof(Point)); // allocate memory for the sample array
-
-    srand(time(NULL)); // generate a seed given the current time
-
-    // Add a point in the sample array
-    for (int i=0; i<sample_size; i++) {
-        int random_indices = -1;
-        while (random_indices == -1) {
-            random_indices = rand() % point_size; // get a random index
-
-            // for each index already chosen, if that index is equal to the candidate, reject that index and try with another one
-            for (int j=0; j<i; j++) {
-                if (random_indices == indices[j]) {
-                    random_indices = -1;
-                    break;
-                }
-            }
-        }
-
-        indices[i] = random_indices; // add the index to the array of selected indices
-        samples[i] = point_set[i]; // add the point to the unique sample points
-    }
-
-    return samples; // return the sample array
-}
-
 // Function that delete a point from an array
-void deletePointFromArray(Point** array, int index, int array_size) {
-    for (int i=index; i < array_size - 1; i++) {
-        (*array)[i] = (*array)[i+1];
-    }
-}
-
-// Function that delete a node from an array
-void deleteNodeFromArray(Node** array, int index, int* array_size) {
+void deletePointFromArray(Point** array, int index, int* array_size) {
     for (int i=index; i < *array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
+
     (*array_size)--;
+    *array = (Point*)realloc(*array, (*array_size) * sizeof(Point));
 }
 
-// Function that delete an  from an array
-void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
-    for (int i=index; i < array_size - 1; i++) {
-        (*array)[i] = (*array)[i+1];
-    }
-
-    *array = (SubsetStructure*)realloc(*array, (array_size - 1) * sizeof(SubsetStructure));
+// Function that adds a point to an array
+void addPointToArray(Point** array, Point point, int* array_size) {
+    *array = (Point*)realloc(*array, (*array_size + 1) * sizeof(Point));
+    (*array)[*array_size] = point;
+    (*array_size)++;
 }
 
 // Function that adds a node to an array
@@ -66,12 +31,22 @@ void addNodeToArray(Node** array, Node node, int* array_size) {
     (*array_size)++;
 }
 
-// Function that adds a point to an array
-void addPointToArray(Point** array, Point point, int* array_size) {
-    *array = (Point*)realloc(*array, (*array_size + 1) * sizeof(Point));
-    (*array)[*array_size] = point;
-    (*array_size)++;
-}
+// Function that delete a node from an array
+// void deleteNodeFromArray(Node** array, int index, int* array_size) {
+//     for (int i=index; i < *array_size - 1; i++) {
+//         (*array)[i] = (*array)[i+1];
+//     }
+//     (*array_size)--;
+// }
+
+// Function that delete an  from an array
+// void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
+//     for (int i=index; i < array_size - 1; i++) {
+//         (*array)[i] = (*array)[i+1];
+//     }
+// }
+
+
 
 // Function that insert an entry into the entries array of a node
 void insertEntry(Node* node, Entry entry) {
@@ -194,21 +169,41 @@ Node* cpBulkLoading(Point* P, int P_size) {
     }
 
     
-    int F_size; // sample size of F
-    Point *F; // array F containing samples chosen at random from P
-    SubsetStructure *samples_subsets;
+    int K = intMin(B, (int)ceil(P_size/B)); // Define the sample size (K)
+    //printf("\nF_size is: %i", F_size);
+    //printf("\nP_size is: %i", P_size);
+    Point *F = (Point*)malloc(K * sizeof(Point)); // array F containing samples chosen at random from P
+    SubsetStructure *samples_subsets = (SubsetStructure*)malloc(K * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
+    int F_size;
 
     do {
         // STEP 2
 
-        F_size = intMin(B, P_size/B); 
-        F = getSamples(P, P_size, F_size);
+        F_size = K;
+        printf("\nF_size is: %i", F_size);
 
-        samples_subsets = (SubsetStructure*)malloc(F_size * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
+        int *used_indices = (int*)malloc(P_size * sizeof(int)); // array that indicates wich indices are already selected from P to make the sample F
+        
+        for (int i = 0; i < P_size; i++)
+            used_indices[i] = 0;
+
+        for (int i = 0; i < F_size; i++){
+            while (1) {
+                int j = rand() % P_size;
+                if (used_indices[j] == 0){
+                    F[i] = P[j];
+                    used_indices[j] = 1;
+                    break;
+                }
+            }
+        }
+
+        free(used_indices);
+
 
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
-        for (int i=0; i<F_size; i++) {
-            SubsetStructure newSubsetStructure = {F[i], NULL, 0};
+        for (int i=0; i<K; i++) {
+            SubsetStructure newSubsetStructure = {F[i], NULL, 0, 1};
             samples_subsets[i] = newSubsetStructure;
         }
 
@@ -232,38 +227,38 @@ Node* cpBulkLoading(Point* P, int P_size) {
             }
 
             // Add the point of P to the subset of the nearest sample
-            SubsetStructure* nearest_subset = &(samples_subsets[nearest_sample_index]); // Obtain a pointer to the structure that references the subset of the nearest sample found
-            Point** Fj_array = &(nearest_subset->sample_subset); // obtain a pointer to the Fj
-            int* Fj_size = &(nearest_subset->subset_size); // obtain a pointer to the Fj size
-            addPointToArray(Fj_array, p, Fj_size); // add P[i] to Fj
+            addPointToArray(&(samples_subsets[nearest_sample_index].sample_subset), p, &(samples_subsets[nearest_sample_index].subset_size)); // add P[i] to Fj
         }
 
 
         // STEP 4. Redistribution
         // STEP 4.1
-        for (int j=0; j<F_size; j++) { // for each Fj
-            SubsetStructure subset = samples_subsets[j]; // subset structure of Fj
-            Point *Fj_array = subset.sample_subset; // array Fj
-            int Fj_size = subset.subset_size; // size of the array Fj
+
+        Point* newF = NULL;
+        int newF_size = 0;
+
+
+        for (int j=0; j<K; j++) { // for each Fj
+
+            int Fj_size = samples_subsets[j].subset_size; // size of the array Fj
 
             if (Fj_size < b) { // if |Fj| < b
-                deletePointFromArray(&F, j, F_size); // delete point Pj from F (element j from F)
-                deleteSubsetStructureFromArray(&samples_subsets, j, F_size); // delete subset structure j from samples_subsets
-                F_size--; // the sample size is reduced by 1
-
-
+                samples_subsets[j].working = 0; // delete subset structure j from samples_subsets
                 // STEP 4.2
 
                 // for each point in Fj
                 for (int i=0; i < Fj_size; i++) {
-                    Point p = Fj_array[i]; // get the point Fj[i]
+                    Point p = samples_subsets[j].sample_subset[i]; // get the point Fj[i]
 
-                    double nearest_distance = euclidean_distance(p, F[0]);
-                    int nearest_sample_index = 0;
+                    double nearest_distance = DBL_MAX;
+                    int nearest_sample_index = -1;
 
                     // Found the nearest subset Fl for the point p (Fj[i])
-                    for (int l = 1; l < F_size; l++) {
-                        double distance = euclidean_distance(p, F[l]);
+                    for (int l = 0; l < K; l++) {
+                        if (samples_subsets[l].working == 0)
+                            continue;
+
+                        double distance = euclidean_distance(p, samples_subsets[l].point);
                         if (distance < nearest_distance) {
                             nearest_distance = distance;
                             nearest_sample_index = l;
@@ -271,66 +266,77 @@ Node* cpBulkLoading(Point* P, int P_size) {
                     }
 
                     // Move the point from Fj point to the nearest subset (F_l)
-                    SubsetStructure *nearest_subset = &(samples_subsets[nearest_sample_index]); // subset of Fl
-                    Point** Fl_array = &(nearest_subset->sample_subset); // array Fl
-                    int* Fl_size = &(nearest_subset->subset_size); // size of the array Fl
-                    addPointToArray(Fl_array, p, Fl_size);
+                    addPointToArray(&(samples_subsets[nearest_sample_index].sample_subset), p, &(samples_subsets[nearest_sample_index].subset_size));
                 }
 
                 // Free memory from the sample array Fj being redistributed
-                free(Fj_array);
+                free(samples_subsets[j].sample_subset);
             }
+
+            else
+                addPointToArray(&newF, F[j], &newF_size);
         }
 
-    } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
+        free(F);
 
+        if (newF == NULL) {
+            printf("\n ESTA FALLANDO EL NEW_F");
+            exit(1);
+        }
+
+        F = newF;
+
+        printf("\nF_size final: %i", F_size);
+        
+    } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
 
     // STEP 6
 
     Node* T = NULL; // array where we will save every Tj obtained from F
     int T_size = 0;
 
-    for (int j = 0; j < F_size; j++) {
-        SubsetStructure subset = samples_subsets[j]; // subset structure of Fj
-        Point *Fj_array = subset.sample_subset; // array Fj
-        int Fj_size = subset.subset_size; // size of the array Fj
+    for (int j = 0; j < K; j++) {
 
-        if (Fj_size > 0) { // if |Fj| > 0
+        // if this Fj array was redistributed, continue to the next iteration
+        if (samples_subsets[j].working == 0)
+            continue;
 
-            // Recursively call cpBulkLoading for each subset Fj
-            Node* Tj = cpBulkLoading(Fj_array, Fj_size);
+        // Recursively call cpBulkLoading for each subset Fj
+        Node* Tj = cpBulkLoading(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
 
 
-            // STEP 7
-            int Tj_size = Tj->num_entries; // size of the Tj array of entries
+        // STEP 7
+        int Tj_size = Tj->num_entries; // size of the Tj array of entries
 
-            // if Tj size is less than b
-            if (Tj_size < b) {
-                deletePointFromArray(&F, j, F_size); // delete p_fj from F
-                F_size--; // F size is reduced
+        // if Tj size is less than b
+        if (Tj_size < b) {
+            deletePointFromArray(&F, j, F_size); // delete p_fj from F
+            F_size--; // F size is reduced
 
-                Entry *Tj_entries = Tj->entries; // Entry array of the root
+            Entry *Tj_entries = Tj->entries; // Entry array of the root
 
-                // for each entry of Tj
-                for (int p=0; p < Tj_size; p++) {
+            // for each entry of Tj
+            for (int p=0; p < Tj_size; p++) {
 
-                    // add his subtrees to the T array
-                    Entry Tj_entry = Tj_entries[p];
-                    Node *Tj_subtree = Tj_entry.a;
-                    addNodeToArray(&T, *Tj_subtree, &T_size);
+                // add his subtrees to the T array
+                Entry Tj_entry = Tj_entries[p];
+                Node *Tj_subtree = Tj_entry.a;
+                addNodeToArray(&T, *Tj_subtree, &T_size);
 
-                    // "the relevant point is added to F" 
-                    Point subtree_point = Tj_entry.p; // point of the Tj entry
-                    addPointToArray(&F, subtree_point, &F_size); // add the point to F
-                }
+                // "the relevant point is added to F" 
+                Point subtree_point = Tj_entry.p; // point of the Tj entry
+                addPointToArray(&F, subtree_point, &F_size); // add the point to F
             }
-
-            // if root size is greater than or equal to b: Add Tj to the node array T
-            else
-                addNodeToArray(&T, *Tj, &T_size);
         }
+
+        // if root size is greater than or equal to b: Add Tj to the node array T
+        else
+            addNodeToArray(&T, *Tj, &T_size);
+        
+        free(samples_subsets[j].sample_subset);
     }
 
+    free(samples_subsets);
 
     // STEP 8
 
@@ -387,6 +393,8 @@ Node* cpBulkLoading(Point* P, int P_size) {
         }
     }
 
+    free(T);
+
     // STEP 10
     Node *T_sup = cpBulkLoading(F, F_size); // apply cp algorithm to F (sample array)
 
@@ -402,6 +410,8 @@ Node* cpBulkLoading(Point* P, int P_size) {
         joinTj(T_sup, Tj, F, j, &Tj_inserted); // insert Tj into a T_sup leaf
     }
 
+
+    free(F);
 
     // STEP 12
 
