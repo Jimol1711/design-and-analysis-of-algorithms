@@ -37,10 +37,10 @@ typedef struct {
 // Structure that represents a sample subset (F_j)
 typedef struct {
     Point point;
-    Point* sample_subset;
-    int subset_size;
+    Point* subset;
+    int size;
     int working;
-} SubsetStructure;
+} Subset;
 
 typedef struct {
     Point p;

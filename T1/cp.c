@@ -57,7 +57,7 @@ void addPointAndNode(PointAndNode** array, PointAndNode ps, int* array_size) {
 // }
 
 // Function that delete an  from an array
-// void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
+// void deleteSubsetFromArray(Subset** array, int index, int array_size) {
 //     for (int i=index; i < array_size - 1; i++) {
 //         (*array)[i] = (*array)[i+1];
 //     }
@@ -165,6 +165,26 @@ void setCoveringRadius(Node *node) {
     }
 }
 
+void addPointToSubset(Point p, Point* samples, Subset* subsets, int k){
+    //De primera el optimo es nulo
+    double nearest_distance = DBL_MAX;
+    int nearest = INT_MIN;
+
+    //Ahora recorremos los k samples y buscamos el mas cercano
+    for (int j=0; j < k; j++){
+        double distance = euclidean_distance(p, samples[j]);
+
+        if (subsets[j].working == 1 && distance < nearest_distance){   
+            nearest_distance = distance;
+            nearest = j;
+        }
+    }
+
+    subsets[nearest].subset = (Point*)realloc(subsets[nearest].subset, (subsets[nearest].size + 1) * sizeof(Point));
+    subsets[nearest].subset[subsets[nearest].size] = p;
+    subsets[nearest].size++;
+}
+
 Node* cpBulkLoading(Point* P, int P_size) {
     // STEP 1
 
@@ -190,12 +210,11 @@ Node* cpBulkLoading(Point* P, int P_size) {
     int F_size;
     //printf("\nF_size is: %i", F_size);
     //printf("\nP_size is: %i", P_size);
-    Point *F; // array F containing samples chosen at random from P
-    F = (Point*)malloc(K * sizeof(Point));
-    SubsetStructure *samples_subsets = (SubsetStructure*)malloc(K * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
+    Point *F = (Point*)malloc(K * sizeof(Point));; // array F containing samples chosen at random from P 
     int *used_indices = (int*)malloc(P_size * sizeof(int)); // array that indicates wich indices are already selected from P to make the sample F
+    Subset *samples_subsets = (Subset*)malloc(K * sizeof(Subset)); // array that contains, for each element, the Fk array and its size
 
-    do {
+    while (1) {
         // STEP 2
         F_size = K;
         
@@ -219,32 +238,16 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
         for (int i=0; i<K; i++) {
-            SubsetStructure newSubsetStructure = {F[i], NULL, 0, 1};
-            samples_subsets[i] = newSubsetStructure;
+            Subset newSubset = {F[i], NULL, 0, 1};
+            samples_subsets[i] = newSubset;
         }
 
 
         // STEP 3
 
         // For each point in the point set, assign to the nearest sample
-        for (int i=0; i<P_size; i++) {
-            Point p = P[i]; // get the point P[i]
-
-            double nearest_distance = euclidean_distance(p, F[0]);
-            int nearest_sample_index = 0;
-
-            // evaluate for each sample point in F
-            for (int j=1; j<K; j++) {
-                int distance = euclidean_distance(p, F[j]);
-                if (distance < nearest_distance) {
-                    nearest_distance = distance;
-                    nearest_sample_index = j;
-                }
-            }
-
-            // Add the point of P to the subset of the nearest sample
-            addPointToArray(&(samples_subsets[nearest_sample_index].sample_subset), p, &(samples_subsets[nearest_sample_index].subset_size)); // add P[i] to Fj
-        }
+        for (int i=0; i<P_size; i++)
+            addPointToSubset(P[i], F, samples_subsets, K);
 
 
         // STEP 4. Redistribution
