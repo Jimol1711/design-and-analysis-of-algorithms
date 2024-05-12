@@ -26,13 +26,6 @@ void addPointToArray(Point** array, Point point, int* array_size) {
     (*array_size)++;
 }
 
-// Function that adds a node to an array
-// void addNodeToArray(Node** array, Node node, int* array_size) {
-//     *array = (Node*)realloc(*array, (*array_size + 1) * sizeof(Node));
-//     (*array)[*array_size] = node;
-//     (*array_size)++;
-// }
-
 void deletePointInF(Point** F, int* F_size, Point p) {
     for (int i=0; i < *F_size; i++) {
         Point pj = (*F)[i];
@@ -48,23 +41,6 @@ void addPointAndNode(PointAndNode** array, PointAndNode ps, int* array_size) {
     (*array)[*array_size] = ps;
     (*array_size)++;
 }
-
-// Function that delete a node from an array
-// void deleteNodeFromArray(Node** array, int index, int* array_size) {
-//     for (int i=index; i < *array_size - 1; i++) {
-//         (*array)[i] = (*array)[i+1];
-//     }
-//     (*array_size)--;
-// }
-
-// Function that delete an  from an array
-// void deleteSubsetStructureFromArray(SubsetStructure** array, int index, int array_size) {
-//     for (int i=index; i < array_size - 1; i++) {
-//         (*array)[i] = (*array)[i+1];
-//     }
-// }
-
-
 
 // Function that insert an entry into the entries array of a node
 void insertEntry(Node* node, Entry entry) {
@@ -166,6 +142,7 @@ void setCoveringRadius(Node *node) {
     }
 }
 
+
 Node* cpBulkLoading(Point* P, int P_size) {
     // STEP 1
 
@@ -188,30 +165,19 @@ Node* cpBulkLoading(Point* P, int P_size) {
 
     
     int K = intMin(B, (int)ceil(P_size/B)); // Define the sample size (K)
-    int Z;
-    if (B < (P_size/B))
-        Z = B;
-    else
-        Z = (P_size/B);
-    // if (Z == 1 && P_size > B)
-    //     Z++;
-
-    printf("\nX is: %i", Z);
-
     int F_size;
-    //printf("\nF_size is: %i", Z);
-    //printf("\nP_size is: %i", P_size);
+
     Point *F; // array F containing samples chosen at random from P
     F = (Point*)malloc(K * sizeof(Point));
     SubsetStructure *samples_subsets = (SubsetStructure*)malloc(K * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
     int *used_indices = (int*)malloc(P_size * sizeof(int)); // array that indicates wich indices are already selected from P to make the sample F
 
     do {
+
         // STEP 2
         F_size = K;
         
-        //printf("\nK is: %i", K);
-
+        // Get the samples points and insert into F
         for (int i = 0; i < P_size; i++)
             used_indices[i] = 0;
 
@@ -298,22 +264,10 @@ Node* cpBulkLoading(Point* P, int P_size) {
             }
         }
 
-        // verificar si algún conjunto Fj fue eliminado y ajustar el tamaño de F
-        // int new_F_size = 0;
-        // for (int i = 0; i < K; i++) {
-        //     if (samples_subsets[i].working)
-        //         new_F_size++;
-        // }
-        // F_size = new_F_size;
-
         if (F_size == 1) {
-            //printf("\nK is: %i", K);
-            //printf("\nZ is: %i", Z);
             free(F);
             F = (Point*)malloc(K * sizeof(Point));
         }
-        printf("\nZ is: %i", Z);
-        //printf("\nF_size final: %i", F_size);
         
     } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
 
@@ -351,7 +305,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
                 PointAndNode ps = {Tj_entry.p, *(Tj_entry.a), 0};
                 addPointAndNode(&T, ps, &T_size);
 
-                // "the relevant point is added to F" 
+                // the relevant point is added to F
                 addPointToArray(&F, Tj_entry.p, &F_size); // add the point to F
             }
         }
