@@ -33,6 +33,17 @@ struct entryarrayarray {
     int size;
 };
 
+// Función que encuentra el máximo entre dos doubles
+double max(double i, double j) {
+    return (i > j) ? i : j;
+}
+
+// Función que encuentra el mínimo entre dos doubles
+double min(double i, double j) {
+    return i < j ? i : j;
+}
+
+
 // Función que añade un cluster c a un conjunto de clusters C
 void addCluster(ClustersArray C, ClusterStruct c) {
     if (C.size == 0) {
@@ -47,23 +58,23 @@ void addCluster(ClustersArray C, ClusterStruct c) {
 }
 
 // Función que quita un cluster c de un conjunto de clusters C
-void removeCluster(ClustersArray C, ClusterStruct c) {
+void removeCluster(ClustersArray* C, ClusterStruct* c) {
     /* buscamos la posición del cluster a eliminar */
     int i;
-    for (i = 0; i < C.size; i++) {
-        ClusterStruct *cluster = &C.self[i];
-        if (cluster == &c) {
+    for (i = 0; i < C->size; i++) {
+        ClusterStruct *cluster = &C->self[i];
+        if (cluster == c) {
             break;
         }
     }
     /* movemos los clusters de la derecha */
-    for (int j = i; j < C.size -1; j++) {
-        C.self[j] = C.self[j+1];
+    for (int j = i; j < C->size -1; j++) {
+        C->self[j] = C->self[j+1];
     }
     /* redimensionamos el arreglo */
-    C.self = realloc(C.self, (C.size - 1) * sizeof(ClusterStruct));
+    C->self = realloc(C->self, (C->size - 1) * sizeof(ClusterStruct));
     /* actualizamos el tamaño */
-    C.size--;
+    C->size--;
 }
 
 // Función que retorna un arreglo de entradas con las entradas en C que contienen puntos en el cluster c
@@ -82,18 +93,18 @@ EntryArray entriesWithPointInCluster(EntryArray C, ClusterStruct c) {
 }
 
 // Función que retorna el medoide primario de un cluster
-Point primary_medoid(ClusterStruct cluster) {
+Point primary_medoid(ClusterStruct *cluster) {
     double min_radius = 0.0;
-    Point primary_medoid = cluster.self[0];
-    for (int i = 0; i < cluster.size; i++) {
+    Point primary_medoid = cluster->self[0];
+    for (int i = 0; i < cluster->size; i++) {
         double max_distance = 0.0;
 
         // Calculate the maximum distance to other points in the cluster
-        for (int j = 0; j < cluster.size; j++) {
+        for (int j = 0; j < cluster->size; j++) {
             if (i == j) {
                 continue; // Skip comparing a point to itself
             }
-            double dist = euclidean_distance(cluster.self[i], cluster.self[j]);
+            double dist = euclidean_distance(cluster->self[i], cluster->self[j]);
             if (dist > max_distance) {
                 max_distance = dist;
             }
@@ -102,17 +113,17 @@ Point primary_medoid(ClusterStruct cluster) {
         // Update the minimum radius and primary medoid if needed
         if (max_distance < min_radius || i == 0) {
             min_radius = max_distance;
-            primary_medoid = cluster.self[i];
+            primary_medoid = cluster->self[i];
         }
     }
-    cluster.primary_medoid = primary_medoid;
+    cluster->primary_medoid = primary_medoid;
     return primary_medoid;
 }
 
 // Función que retorna distancia entre dos clusters (distancia entre sus medoides primarios)
 double clusterDist(ClusterStruct c1, ClusterStruct c2) {
-    Point pm_c1 = primary_medoid(c1);
-    Point pm_c2 = primary_medoid(c2);
+    Point pm_c1 = primary_medoid(&c1);
+    Point pm_c2 = primary_medoid(&c2);
     double dist = euclidean_distance(pm_c1, pm_c2);
     return dist;
 }
@@ -155,7 +166,7 @@ ClusterStruct merge_clusters(ClusterStruct c1, ClusterStruct c2) {
         merged_cluster.self[index++] = c2.self[i];
     }
     
-    merged_cluster.primary_medoid = primary_medoid(merged_cluster);
+    merged_cluster.primary_medoid = primary_medoid(&merged_cluster);
 
     return merged_cluster;
 }
@@ -272,33 +283,20 @@ ClustersArray MinMaxSplitPolicy(ClusterStruct cluster) {
 
 }
 
-// Función que encuentra el máximo entre dos doubles
-double max(double i, double j) {
-    return (i > j) ? i : j;
-}
-
-// Función que encuentra el mínimo entre dos doubles
-double min(double i, double j) {
-    return i < j ? i : j;
-}
-
 // Función que añade una entrada a un nodo
-void addEntryInNode(Node N, Entry e) {
-    /* Caso por si dejamos el arreglo de entradas sin tamaño fijo */
+void addEntryInNode(Node *N, Entry e) {
     
-    if (N.num_entries == 0) {
-        N.entries = (Entry *)malloc(sizeof(Entry));
-        N.entries[N.num_entries] = e;
-        N.num_entries++;
+    if (N->num_entries == 0) {
+        N->entries = (Entry *)malloc(sizeof(Entry));
+        N->entries[N->num_entries] = e;
+        N->num_entries++;
     }
     else {
-        N.entries = (Entry *)realloc(N.entries, (N.num_entries + 1) * sizeof(Entry));
-        N.entries[N.num_entries] = e;
-        N.num_entries++;
+        N->entries = (Entry *)realloc(N->entries, (N->num_entries + 1) * sizeof(Entry));
+        N->entries[N->num_entries] = e;
+        N->num_entries++;
     }
     
-   // N.entries[N.num_entries] = e;
-   // N.num_entries++;
 }
 
 // Función que añade un punto a un cluster
@@ -381,7 +379,7 @@ ClustersArray Cluster(ClusterStruct C_in) {
 
     // Parte 3.
     while(C.size > 1) {
-        // Parte 3.1 (Aquí la condición |c1| >= |c2| se revisa distinto, quizás falle)
+        // Parte 3.1
         ClustersArray C_closest = closest_pair(C);
         ClusterStruct c1, c2;
         // Parte 3.2
@@ -394,13 +392,13 @@ ClustersArray Cluster(ClusterStruct C_in) {
             ClusterStruct c2 = C_closest.self[0];
         }
         if (c1.size + c2.size <= B) {
-            removeCluster(C, c1);
-            removeCluster(C, c2);
+            removeCluster(&C, &c1);
+            removeCluster(&C, &c2);
             ClusterStruct c_union = merge_clusters(c1, c2);
             addCluster(C, c_union);
         // Parte 3.3
         } else if (c1.size >= c2.size) {
-            removeCluster(C, c1);
+            removeCluster(&C, &c1);
             addCluster(C_out, c1);
         }
     }
@@ -410,12 +408,12 @@ ClustersArray Cluster(ClusterStruct C_in) {
 
     // Parte 5.
     ClusterStruct c_prime;
-    Point *c_prime_points;
     if (C_out.size > 0) {
         c_prime = closest_neighbor(c, C_out);
-        removeCluster(C_out, c_prime);
+        removeCluster(&C_out, &c_prime);
     } else {
-        ClusterStruct c_prime = {c_prime_points, 0};
+        Point *c_prima_points;
+        ClusterStruct c_prima = {c_prima_points, 0};
     }
 
     // Parte 6.
@@ -437,64 +435,44 @@ ClustersArray Cluster(ClusterStruct C_in) {
 // Función que retorna entrada para hoja del mtree
 Entry OutputHoja(ClusterStruct C_in) {
 
-    // Parte 1.
-    Point g = primary_medoid(C_in);
-    double r = 0.0;
-    Node C;
-    Entry *entries = C.entries;
-    entries = (Entry *)malloc(C_in.size * sizeof(Entry));
-    C.num_entries = C_in.size;
+    Point g = primary_medoid(&C_in);
+    double r = 0;
+    Entry *C_entries;
+    Node C = {C_entries, 0};
 
-    // Parte 2.
     for (int i = 0; i < C_in.size; i++) {
         Point p = C_in.self[i];
-        Entry ent = {p, 0.0, NULL};
-        C.entries[i] = ent; // Esto puede fallar porque no se va a llenar el nodo, si es ptr debería funcionar
-        r = max(r, euclidean_distance(g, p));
+        Entry new_entry = {p, 0.0, NULL};
+        addEntryInNode(&C, new_entry);
+        r = max(r, euclidean_distance(g,p));
     }
 
-    // Parte 3.
     Node *a = &C;
 
-    // Parte 4.
-    Entry leaf = {g, r, a};
+    Entry out = {g, r, a};
+    return out;
 
-    return leaf;
 }
 
 // Función que retorna entrada para nodo interno del mtree
 Entry OutputInterno(EntryArray C_mra) {
-    
-    // Parte 1.
-    ClusterStruct C_in;
-    C_in.self = (Point *)malloc(C_mra.size * sizeof(Point));
-    C_in.size = C_mra.size;
 
-    for (int i = 0; i < C_mra.size; i++) {
-        C_in.self[i] = C_mra.self[i].p;
-    }
-
-    Point G = primary_medoid(C_in);
+    ClusterStruct C_in = pointsInEntryArray(C_mra);
+    Point G = primary_medoid(&C_in);
     double R = 0.0;
-    Node C;
-    C.entries = malloc(C_mra.size * sizeof(Entry));
-    C.num_entries = C_mra.size;
-
-    // Parte 2.
+    Entry *C_entries;
+    Node C = {C_entries, 0};
+    
     for (int i = 0; i < C_mra.size; i++) {
-        C.entries[i] = C_mra.self[i];
-        R = max(R, euclidean_distance(G, C_mra.self[i].p) + C_mra.self[i].cr);
+        Entry new_entry = C_mra.self[i];
+        addEntryInNode(&C, new_entry);
+        R = max(R, euclidean_distance(G,new_entry.p) + new_entry.cr);
     }
-
-    // Parte 3.
+    
     Node *A = &C;
-
-    // Parte 4.
-    Entry internal = {G, R, A};
-
-    free(C_in.self);
-
-    return internal;
+    
+    Entry out = {G, R, A};
+    return out;
 }
 
 // Función que realiza el algoritmo ss sobre un conjunto de puntos, retorna el árbol construido
