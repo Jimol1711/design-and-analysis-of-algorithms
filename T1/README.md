@@ -27,3 +27,9 @@ Y para ejecutar el código se debe ejecutar el siguiente comando:
 ```bash
 .\mtree-test.exe
 ```
+
+Los archivos adjuntos contienen un ejecutable.
+
+Él código solo se ejecuta para el conjunto más pequeño. Para poder ejecutar para los siguientes conjuntos hay que cambiar la condición de los ciclos for en la parte de "Testing". Para esto se debe hacer lo siguiente:
+- Para el método SS, dirigirse a la línea 87 y cambiar el la cota superior del ciclo for por n, donde n es el número de experimentos que se quieren ejecutar (Mientras mayor n, mayor número de puntos).
+- Para el método CP realizar lo mismo pero en la línea 105.

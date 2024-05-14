@@ -4,6 +4,7 @@
 #include <math.h>
 #include <time.h>
 #include <limits.h>
+#include <float.h>
 
 #define B 128
 #define b 64

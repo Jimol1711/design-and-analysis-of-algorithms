@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
 #include "ss.c"
 
 // Function that returns a random double value between 0 and 1
@@ -89,7 +84,7 @@ int main() {
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
     printf("Begin experiment\n");
     printf("Begin ss algorithm experiments\n");
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 1; i++) { // Este ciclo for se debe modificar si se quieren realizar experimentos con más puntos
         Node *ss_tree = sextonSwinbank(P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
@@ -104,9 +99,10 @@ int main() {
     int cp_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    
     printf("Begin cp algorithm experiments\n");
-    for (int i = 0; i < 16; i++) {
-        Node *cp_tree = sextonSwinbank(P[i], point_nums[i]);
+    for (int i = 0; i < 1; i++) { // Este ciclo for se debe modificar si se quieren realizar experimentos con más puntos
+        Node *cp_tree = ciacciaPatella(P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
             Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
@@ -114,10 +110,11 @@ int main() {
         cp_disk_acceses[i] = acceses;
     }
     printf("Passed cp algorithm\n\n");
+    
     printf("End experiment\n\n");
 
     // Imprimimos accesos de cada conjunto de puntos
-    for (int i = 0; i < 16; i++) {
+    for (int i = 0; i < 1; i++) {
         printf("CP acceses for set %i: %i\n", i + 1, cp_disk_acceses[i]);
         printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
     }
