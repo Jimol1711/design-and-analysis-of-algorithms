@@ -1,13 +1,22 @@
-#include "mtree.h"
-#include <time.h>
-#include <float.h>
-#include <limits.h>
+#include "mtree.c"
 
+typedef struct subsetstructure SubsetStructure;
+typedef struct pointandnode PointAndNode;
 
-// Función que encuentra el mínimo entre dos ints
-int intMin(int i, int j) {
-    return i < j ? i : j;
-}
+// Estructura que representa un punto con un nodo
+struct pointandnode {
+    Point p;
+    Node n;
+    int h;
+};
+
+// Estructura que representa un conjunto de samples
+struct subsetstructure {
+    Point point;
+    Point* sample_subset;
+    int working;
+    int subset_size;
+};
 
 // Function that delete a point from an array
 void deletePointFromArray(Point** array, int index, int* array_size) {
@@ -143,7 +152,7 @@ void setCoveringRadius(Node *node) {
 }
 
 
-Node* cpBulkLoading(Point* P, int P_size) {
+Node* ciacciaPatella(Point* P, int P_size) {
     // STEP 1
 
     // If the number of points in the point set is less or equal to B.
@@ -284,8 +293,8 @@ Node* cpBulkLoading(Point* P, int P_size) {
         if (samples_subsets[j].working == 0)
             continue;
 
-        // Recursively call cpBulkLoading for each subset Fj
-        Node* Tj = cpBulkLoading(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
+        // Recursively call ciacciaPatella for each subset Fj
+        Node* Tj = ciacciaPatella(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
 
 
         // STEP 7
@@ -341,7 +350,6 @@ Node* cpBulkLoading(Point* P, int P_size) {
     PointAndNode *T_prime = NULL;
     int T_prime_size = 0;
 
-
     // STEP 9
 
     // for each Tj 
@@ -378,7 +386,7 @@ Node* cpBulkLoading(Point* P, int P_size) {
     }
 
     // STEP 10
-    Node *T_sup = cpBulkLoading(F, F_size); // apply cp algorithm to F (sample array)
+    Node *T_sup = ciacciaPatella(F, F_size); // apply cp algorithm to F (sample array)
 
 
     //STEP 11
