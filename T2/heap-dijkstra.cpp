@@ -8,11 +8,16 @@ using namespace std;
 class Heap {
 private:
     vector<pair<double, int>> heap;
+    unordered_map<int, pair<double, int>*> nodePointers;
 
 public:
     // constructor
     Heap(vector<pair<double, int>> array) : heap(array) {
         buildHeap(); // Se convierte el arreglo en un heap
+        // Llenar el mapa de punteros a pares en el heap
+        for (int i = 0; i < heap.size(); ++i) {
+            nodePointers[heap[i].second] = &heap[i];
+        }
     }
 
     // metodo heapify, para reorganizar el heap. Es O(log n)
@@ -63,5 +68,28 @@ public:
         heap.pop_back(); // se elimina ese último elemento del heap
         heapify(0); // hacemos heapify al elemento que se llevó a la raíz
         return minElement; // retornamos el elemento minimo que se obtuvo al inicio
+    }
+
+    // Método para actualizar la distancia de un nodo en el heap
+    void decreaseKey(int node, double newDistance) {
+        // obtenemos el puntero al nodo y actualizamos la distancia del nodo
+        pair<double, int>* ptr = nodePointers[node];
+        ptr->first = newDistance;
+
+        // Obtener el índice del nodo en el heap (la resta de punteros devuelve un indice) y el indice de su padre
+        int index = ptr - &heap[0]; 
+        int parent = (index - 1) / 2;
+
+        // Reorganizar el heap después de actualizar la distancia.
+        // Mientras el padre sea mayor que el nodo que actualizamos, intercambiamos los nodos y sus punteros
+        // en el peor caso, el nodo es una hoja y debe subir hasta la raíz, lo cual toma O(log n)
+        while (index > 0 && heap[parent].first > heap[index].first) {
+            swap(heap[index], heap[parent]); // intercambiar los nodos
+            swap(nodePointers[heap[index].second], nodePointers[heap[parent].second]); // Actualizar los punteros
+            
+            // seguimos subiendo el nodo, ahora con su nuevo indice (pues intercambió lugar con su padre)
+            index = (index - 1) / 2;
+            parent = (index - 1) / 2;
+        }
     }
 };
