@@ -1,84 +1,63 @@
 #include "mtree.c"
 
 typedef struct subsetstructure SubsetStructure;
+typedef struct pointandnode PointAndNode;
+
+// Estructura que representa un punto con un nodo
+struct pointandnode {
+    Point p;
+    Node n;
+    int h;
+};
 
 // Estructura que representa un conjunto de samples
 struct subsetstructure {
     Point point;
     Point* sample_subset;
+    int working;
     int subset_size;
 };
 
-// Función que retorna un arreglo de sample_size samples del conjunto point_set
-Point* getSamples(Point* point_set, int point_size, int sample_size) {
-    int indices[sample_size]; // array that contains the selected indices of the points in the sample
-    Point *samples = malloc(sample_size * sizeof(Point)); // array with the selected points 
-    srand(time(NULL)); // generate a seed given the current time
-
-    // Add a point in the sample array
-    for (int i=0; i<sample_size; i++) {
-        int random_indices = -1;
-        while (random_indices == -1) {
-            random_indices = rand() % point_size; // get a random index
-
-            // for each index already chosen, if that index is equal to the candidate, reject that index and try with another one
-            for (int j=0; j<i; j++) {
-                if (random_indices == indices[j]) {
-                    random_indices = -1;
-                    break;
-                }
-            }
-        }
-
-        indices[i] = random_indices; // add the index to the array of selected indices
-        samples[i] = point_set[i]; // add the point to the unique sample points
-    }
-    return samples; // return the sample array
-}
-
-// Función que borra un punto del arreglo array en la posición index
-void deletePointFromArray(Point** array, int index, int array_size) {
-    for (int i=index; i < array_size - 1; i++) {
+// Function that delete a point from an array
+void deletePointFromArray(Point** array, int index, int* array_size) {
+    for (int i=index; i < *array_size - 1; i++) {
         (*array)[i] = (*array)[i+1];
     }
-}
 
-// Función que borra un nodo del arreglo array en la posición index
-void deleteNodeFromArray(Node** array, int index, int* array_size) {
-    for (int i=index; i < (*array_size) - 1; i++) {
-        (*array)[i] = (*array)[i+1];
-    }
     (*array_size)--;
+    *array = (Point*)realloc(*array, (*array_size) * sizeof(Point));
 }
 
-// Función que borra un subsetstructure del arreglo array en la posición index
-void deleteSubsetStructureFromArray(SubsetStructure* array, int index, int array_size) {
-    for (int i=index; i < array_size - 1; i++) {
-        array[i] = array[i+1];
-    }
-}
-
-// Función que agrega node al arreglo de nodos array
-void addNodeToArray(Node** array, Node node, int* array_size) {
-    *array = (Node*)realloc(*array, (*array_size + 1) * sizeof(Node));
-    (*array)[*array_size] = node;
-    (*array_size)++;
-}
-
-// Función que agrega point al arreglo de puntos array
+// Function that adds a point to an array
 void addPointToArray(Point** array, Point point, int* array_size) {
     *array = (Point*)realloc(*array, (*array_size + 1) * sizeof(Point));
     (*array)[*array_size] = point;
     (*array_size)++;
 }
 
-// Función que agrega una entrada al arreglo de entradas de un nodo
+void deletePointInF(Point** F, int* F_size, Point p) {
+    for (int i=0; i < *F_size; i++) {
+        Point pj = (*F)[i];
+        if (pj.x == p.x && pj.y == p.y) {
+            deletePointFromArray(F, i, F_size);
+            break;
+        }
+    }
+}
+
+void addPointAndNode(PointAndNode** array, PointAndNode ps, int* array_size) {
+    *array = (PointAndNode*)realloc(*array, (*array_size + 1) * sizeof(PointAndNode));
+    (*array)[*array_size] = ps;
+    (*array_size)++;
+}
+
+// Function that insert an entry into the entries array of a node
 void insertEntry(Node* node, Entry entry) {
     node->entries[node->num_entries] = entry;
     (node->num_entries)++;
 }
 
-// Función que calcula la altura de un árbol
+// Function that calculates the height of a tree
 int treeHeight(Node* node) {
     if (node == NULL) {
         return 0; // If the tree is empty, height is 0
@@ -96,21 +75,21 @@ int treeHeight(Node* node) {
     }
 }
 
-// Función que inserta un nodo 'Tj' en la hoja de un 'nodo', donde el punto de la hoja es el mismo que el punto de F[j]
-void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
-    Entry *node_entries = node->entries; // entries of the node
-    int entries_size = node->num_entries; // size of entries of the node
+// Function that insert a 'Tj' node into the leaf of a 'node', where the leaf point is the same as the point of F[j].
+void joinTj(Node* Tsup,  PointAndNode* Tj, int* already_inserted) {
+    Entry *node_entries = Tsup->entries; // entries of the node
+    int entries_size = Tsup->num_entries; // size of entries of the node
 
     // if the node is a leaf
-    if (is_leaf(node)) {
-        Point p_j = F[j]; // corresponding point to p_j in F
+    if (is_leaf(Tsup)) {
+        Point pj = Tj->p; // corresponding point to p_j in F
 
         // for each entry, verify if his point is equal to p_j
         for (int i=0; i<entries_size; i++) {
             Entry* entry = &node_entries[i];
             Point p = entry->p;
-            if (p.x == p_j.x && p.y == p_j.y) { // if the points have the same coordinates, add Tj to that leaf
-                entry->a = Tj;
+            if (p.x == pj.x && p.y == pj.y) { // if the points have the same coordinates, add Tj to that leaf
+                entry->a = &(Tj->n);
                 *already_inserted = 1; // Tj was inserted
                 return;
             }
@@ -128,13 +107,13 @@ void joinTj(Node* node,  Node* Tj, Point* F, int j, int* already_inserted) {
             else {
                 Entry* entry = &node_entries[i];
                 Node* child = entry->a;
-                joinTj(child, Tj, F, j, already_inserted);
+                joinTj(child, Tj, already_inserted);
             }
         }
     }
 }
 
-// Función que setea el radio cobertor de cada subárbol de un nodo
+// Function that set the covering radius of each subtree of a node
 void setCoveringRadius(Node *node) {
     Entry* node_entries = node->entries; // entries from the node
     int entries_size = node->num_entries; // number of entries of the node
@@ -172,15 +151,10 @@ void setCoveringRadius(Node *node) {
     }
 }
 
-// Función que encuentra el mínimo entre dos ints
-int intMin(int i, int j) {
-    return i < j ? i : j;
-}
 
-// Función que implementa el método de construcción CP
 Node* ciacciaPatella(Point* P, int P_size) {
     // STEP 1
-    printf("CP Step 1\n");
+
     // If the number of points in the point set is less or equal to B.
     if (P_size <= B) {
         // Then create a new Node structure (it will be a leaf)
@@ -197,25 +171,47 @@ Node* ciacciaPatella(Point* P, int P_size) {
 
         return newNode;
     }
+
     
-    int F_size = intMin(B, P_size / B); // sample size of F
+    int K = intMin(B, (int)ceil(P_size/B)); // Define the sample size (K)
+    int F_size;
+
     Point *F; // array F containing samples chosen at random from P
-    SubsetStructure samples_subsets[F_size]; // array that contains, for each element, the Fk array and its size
+    F = (Point*)malloc(K * sizeof(Point));
+    SubsetStructure *samples_subsets = (SubsetStructure*)malloc(K * sizeof(SubsetStructure)); // array that contains, for each element, the Fk array and its size
+    int *used_indices = (int*)malloc(P_size * sizeof(int)); // array that indicates wich indices are already selected from P to make the sample F
 
     do {
-        F_size = intMin(B, P_size / B);
+
         // STEP 2
-        printf("CP Step 2\n");
-        // F_size = intMin(B, P_size / B); 
-        F = getSamples(P, P_size, F_size); 
+        F_size = K;
+        
+        // Get the samples points and insert into F
+        for (int i = 0; i < P_size; i++)
+            used_indices[i] = 0;
+
+        for (int i = 0; i < K; i++){
+            while (1) {
+                int j = rand() % P_size;
+                if (used_indices[j] == 0){
+                    F[i] = P[j];
+                    used_indices[j] = 1;
+                    break;
+                }
+            }
+        }
+
+
+
         // Initialize every sample subset structure belonging to the sample points in F and add to samples subsets array
-        for (int i=0; i < F_size; i++) {            
-            SubsetStructure newSubsetStructure = {F[i], NULL, 0};
+        for (int i=0; i<K; i++) {
+            SubsetStructure newSubsetStructure = {F[i], NULL, 0, 1};
             samples_subsets[i] = newSubsetStructure;
         }
 
+
         // STEP 3
-        printf("CP Step 3\n"); 
+
         // For each point in the point set, assign to the nearest sample
         for (int i=0; i<P_size; i++) {
             Point p = P[i]; // get the point P[i]
@@ -224,8 +220,8 @@ Node* ciacciaPatella(Point* P, int P_size) {
             int nearest_sample_index = 0;
 
             // evaluate for each sample point in F
-            for (int j=1; j<F_size; j++) {
-                int distance = euclidean_distance(p, F[j]);
+            for (int j=1; j<K; j++) {
+                double distance = euclidean_distance(p, F[j]);
                 if (distance < nearest_distance) {
                     nearest_distance = distance;
                     nearest_sample_index = j;
@@ -233,38 +229,35 @@ Node* ciacciaPatella(Point* P, int P_size) {
             }
 
             // Add the point of P to the subset of the nearest sample
-            SubsetStructure* nearest_subset = &samples_subsets[nearest_sample_index]; // Obtain a pointer to the structure that references the subset of the nearest sample found
-            Point** Fj_array = &(nearest_subset->sample_subset); // obtain a pointer to the Fj
-            int* Fj_size = &(nearest_subset->subset_size); // obtain a pointer to the Fj size
-            addPointToArray(Fj_array, p, Fj_size); // add P[i] to Fj
+            addPointToArray(&(samples_subsets[nearest_sample_index].sample_subset), p, &(samples_subsets[nearest_sample_index].subset_size)); // add P[i] to Fj
         }
 
+
         // STEP 4. Redistribution
-        printf("CP Step 4\n");
         // STEP 4.1
-        for (int j=0; j<F_size; j++) { // for each Fj
-            SubsetStructure subset = samples_subsets[j]; // subset structure of Fj
-            Point *Fj_array = subset.sample_subset; // array Fj
-            int Fj_size = subset.subset_size; // size of the array Fj
+
+        for (int j=0; j<K; j++) { // for each Fj
+
+            int Fj_size = samples_subsets[j].subset_size; // size of the array Fj
 
             if (Fj_size < b) { // if |Fj| < b
-                deletePointFromArray(&F, j, F_size); // delete point Pj from F (element j from F)
-                deleteSubsetStructureFromArray(samples_subsets, j, F_size); // delete subset structure j from samples_subsets
-                F_size--; // the sample size is reduced by 1
-
-
+                samples_subsets[j].working = 0; // delete subset structure j from samples_subsets
+                deletePointInF(&F, &F_size, samples_subsets[j].point);
                 // STEP 4.2
 
                 // for each point in Fj
                 for (int i=0; i < Fj_size; i++) {
-                    Point p = Fj_array[i]; // get the point Fj[i]
+                    Point p = samples_subsets[j].sample_subset[i]; // get the point Fj[i]
 
-                    double nearest_distance = euclidean_distance(p, F[0]);
-                    int nearest_sample_index = 0;
+                    double nearest_distance = DBL_MAX;
+                    int nearest_sample_index = -1;
 
                     // Found the nearest subset Fl for the point p (Fj[i])
-                    for (int l = 1; l < F_size; l++) {
-                        double distance = euclidean_distance(p, F[l]);
+                    for (int l = 0; l < K; l++) {
+                        if (samples_subsets[l].working == 0)
+                            continue;
+
+                        double distance = euclidean_distance(p, samples_subsets[l].point);
                         if (distance < nearest_distance) {
                             nearest_distance = distance;
                             nearest_sample_index = l;
@@ -272,105 +265,108 @@ Node* ciacciaPatella(Point* P, int P_size) {
                     }
 
                     // Move the point from Fj point to the nearest subset (F_l)
-                    SubsetStructure *nearest_subset = &(samples_subsets[nearest_sample_index]); // subset of Fl
-                    Point** Fl_array = &(nearest_subset->sample_subset); // array Fl
-                    int* Fl_size = &(nearest_subset->subset_size); // size of the array Fl
-                    addPointToArray(Fl_array, p, Fl_size);
+                    addPointToArray(&(samples_subsets[nearest_sample_index].sample_subset), p, &(samples_subsets[nearest_sample_index].subset_size));
                 }
 
                 // Free memory from the sample array Fj being redistributed
-                free(Fj_array);
+                free(samples_subsets[j].sample_subset);
             }
         }
 
+        if (F_size == 1) {
+            free(F);
+            F = (Point*)malloc(K * sizeof(Point));
+        }
+        
     } while (F_size == 1); // STEP 5: if the sample size |F| = 1, return to step 2
-    printf("CP Step 5\n");
+
+    free(used_indices);
 
     // STEP 6
-    printf("CP Step 6\n");
-    Node* T = NULL; // array where we will save every Tj obtained from F
+
+    PointAndNode* T = NULL; // array where we will save every Tj obtained from F
     int T_size = 0;
 
-    for (int j = 0; j < F_size; j++) {
-        SubsetStructure subset = samples_subsets[j]; // subset structure of Fj
-        Point *Fj_array = subset.sample_subset; // array Fj
-        int Fj_size = subset.subset_size; // size of the array Fj
+    for (int j = 0; j < K; j++) {
 
-        if (Fj_size > 0) { // if |Fj| > 0
+        // if this Fj array was redistributed, continue to the next iteration
+        if (samples_subsets[j].working == 0)
+            continue;
 
-            // Recursively call ciacciaPatella for each subset Fj
-            Node* Tj = ciacciaPatella(Fj_array, Fj_size);
+        // Recursively call ciacciaPatella for each subset Fj
+        Node* Tj = ciacciaPatella(samples_subsets[j].sample_subset, samples_subsets[j].subset_size);
 
 
-            // STEP 7
-            printf("CP Step 7\n");
-            int Tj_size = Tj->num_entries; // size of the Tj array of entries
+        // STEP 7
+        int Tj_size = Tj->num_entries; // size of the Tj array of entries
 
-            // if Tj size is less than b
-            if (Tj_size < b) {
-                deletePointFromArray(&F, j, F_size); // delete p_fj from F
-                F_size--; // F size is reduced
+        // if Tj size is less than b
+        if (Tj_size < b) {
+            deletePointInF(&F, &F_size, samples_subsets[j].point);
 
-                Entry *Tj_entries = Tj->entries; // Entry array of the root
+            Entry *Tj_entries = Tj->entries; // Entry array of the root
 
-                // for each entry of Tj
-                for (int p=0; p < Tj_size; p++) {
+            // for each entry of Tj
+            for (int p=0; p < Tj_size; p++) {
 
-                    // add his subtrees to the T array
-                    Entry Tj_entry = Tj_entries[p];
-                    Node *Tj_subtree = Tj_entry.a;
-                    addNodeToArray(&T, *Tj_subtree, &T_size);
+                // add his subtrees to the T array
+                Entry Tj_entry = Tj_entries[p];
+                PointAndNode ps = {Tj_entry.p, *(Tj_entry.a), 0};
+                addPointAndNode(&T, ps, &T_size);
 
-                    // "the relevant point is added to F" 
-                    Point subtree_point = Tj_entry.p; // point of the Tj entry
-                    addPointToArray(&F, subtree_point, &F_size); // add the point to F
-                }
+                // the relevant point is added to F
+                addPointToArray(&F, Tj_entry.p, &F_size); // add the point to F
             }
-
-            // if root size is greater than or equal to b: Add Tj to the node array T
-            else
-                addNodeToArray(&T, *Tj, &T_size);
         }
+
+        // if root size is greater than or equal to b: Add Tj to the node array T
+        else {
+            PointAndNode ps = {samples_subsets[j].point, *Tj, 0};
+            addPointAndNode(&T, ps, &T_size);
+        }
+
+        free(samples_subsets[j].sample_subset);
     }
 
-    // STEP 8
-    printf("CP Step 8\n");
-    // found h
-    int h; // min height of the Tj trees
-    h = treeHeight(&T[0]); // set the first subtree height as the minimum
+    free(samples_subsets);
 
-    for (int j=1; j < T_size; j++) {
-        Node *Tj = &T[j];
+    // STEP 8
+
+    // found h
+    int h = INT_MAX;
+
+    for (int j=0; j < T_size; j++) {
+        Node *Tj = &(T[j].n);
 
         // if another Tj has smaller height, set that height on h
         int subtree_height = treeHeight(Tj);
+        T[j].h = subtree_height;
+
         if (subtree_height < h)
             h = subtree_height;
     }
 
     // Define T' as empty set
-    Node *T_prime = NULL;
+    PointAndNode *T_prime = NULL;
     int T_prime_size = 0;
 
-
     // STEP 9
-    printf("CP Step 9\n");
+
     // for each Tj 
     for (int j=0; j < T_size; j++) {
-        Node *Tj = &T[j]; // Tj
-        int Tj_height = treeHeight(Tj); // Hieght of Tj
+        Node Tj = T[j].n; // Tj
+        int Tj_height = T[j].h; // Hieght of Tj
 
         // if the Tj height is equal to h, add the Tj to T_prime
         if (Tj_height == h)
-            addNodeToArray(&T_prime, *Tj, &T_prime_size);
+            addPointAndNode(&T_prime, T[j], &T_prime_size);
 
         else {
             // delete the respective point j in F
-            deletePointFromArray(&F, j, F_size);
-            F_size--;
+            deletePointInF(&F, &F_size, T[j].p);
 
-            Entry* Tj_entries = Tj->entries;
-            int Tj_size = Tj->num_entries;
+            Entry* Tj_entries = Tj.entries;
+            int Tj_size = Tj.num_entries;
 
             // for each subtree in Tj, insert into T_prime if the subtree has height equal to h
             for (int p=0; p < Tj_size; p++) {
@@ -380,8 +376,9 @@ Node* ciacciaPatella(Point* P, int P_size) {
 
                 // if the subtree height is equal to h:
                 if (subtree_height == h) {
-                    addNodeToArray(&T_prime, *subtree, &T_prime_size); // add this node to T_prime
                     Point root_point = Tj_entry.p; // root point of the subtree of height h
+                    PointAndNode ps = {root_point, *subtree, subtree_height};
+                    addPointAndNode(&T_prime, ps, &T_prime_size); // add this node to T_prime
                     addPointToArray(&F, root_point, &F_size); // add the root point to F
                 }
             }
@@ -389,28 +386,31 @@ Node* ciacciaPatella(Point* P, int P_size) {
     }
 
     // STEP 10
-    printf("CP Step 10\n");
     Node *T_sup = ciacciaPatella(F, F_size); // apply cp algorithm to F (sample array)
 
 
     //STEP 11
-    printf("CP Step 11\n");
+    
     int Tj_inserted; // variable that indicates if the Tj was inserted. It is useful to evite unnecesary iterations in joinTj recursive function
 
     // for each Tj in T_prime, insert Tj into the corresponding leaf in T_sup
     for (int j=0; j < T_prime_size; j++) {
         Tj_inserted = 0; // begin with the Tj is not inserted still
-        Node *Tj = &T_prime[j]; // Obtain Tj from T_prime
-        joinTj(T_sup, Tj, F, j, &Tj_inserted); // insert Tj into a T_sup leaf
+        PointAndNode *Tj = &T_prime[j]; // Obtain Tj from T_prime
+        joinTj(T_sup, Tj, &Tj_inserted); // insert Tj into a T_sup leaf
     }
 
+
+    free(F);
+
     // STEP 12
-    printf("CP Step 12\n");
+
     // set the covering radius for each entry of T_sup
     setCoveringRadius(T_sup);
 
+
     // STEP 13
-    printf("CP Step 13\n");
+
     // return T_sup
     return T_sup;
 }

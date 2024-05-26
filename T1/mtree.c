@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#include <float.h>
 
 #define B 128
 #define b 64
@@ -11,7 +13,6 @@ typedef struct node Node;
 typedef struct entry Entry;
 typedef struct point Point;
 typedef struct query Query;
-typedef struct subsetstructure SubsetStructure;
 
 // Estructura que representa un punto
 struct point {
@@ -20,9 +21,9 @@ struct point {
 
 // Estructura que representa una entrada
 struct entry {
-    Point p; // point
-    double cr; // covering radius
-    Node *a; // disk address to the root of the covering tree
+    Point p;
+    double cr;
+    Node *a;
 };
 
 
@@ -43,6 +44,11 @@ double euclidean_distance(Point p1, Point p2) {
     return sqrt(pow(p2.x - p1.x, 2) + pow(p2.y - p1.y, 2));
 }
 
+// Función que encuentra el mínimo entre dos ints
+int intMin(int i, int j) {
+    return i < j ? i : j;
+}
+
 // Función que determina si un nodo es hoja o no
 int is_leaf(Node* node) {
     int num_entries = sizeof(node) / sizeof(Entry);
@@ -56,14 +62,15 @@ int is_leaf(Node* node) {
 
 // Función que crea un nodo
 Node* create_node() {
-    Node* node = (Node*)malloc(B * sizeof(Entry));
+    Node* node = (Node*)malloc(sizeof(Node));
+    node->num_entries = 0;
     return node;
 }
 
 // Función que realiza la query Q en el árbol node, guardando los puntos en sol_array y calculando los accesos a disco en la dirección disk_accesses
 void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* disk_accesses) {
-    Point q = Q.q; // query point
-    double r = Q.r; // query radio
+    Point q = Q.q; 
+    double r = Q.r;
     int num_entries = sizeof(node) / sizeof(Entry); // number of entries in the node
     Entry* entries = node->entries; // node Entry array
 
@@ -72,9 +79,10 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     if (is_leaf(node)) {
         (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
-            if(euclidean_distance(entries[i].p, q) <= r) {
+            Point p = entries[i].p;
+            if(euclidian_distance(p, q) <= r) {
                 *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
-                (*sol_array)[*array_size] = q;
+                (*sol_array)[*array_size] = p;
                 (*array_size)++;
             }
         }
@@ -92,9 +100,9 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
 
 // Función que busca los puntos en la query Q del árbol node y guarda accesos a disco en la dirección disk_accesses
 Point* search_points_in_radio(Node* node, Query Q, int* disk_accesses) {
-    Point* sol_array = NULL; // Initialize the solutions array as null
-    int array_size = 0; // the array_size of sol_array starts in zero (doesnt have solutions initially)
+    Point* sol_array = NULL;
+    int array_size = 0;
 
-    range_search(node, Q, &sol_array, &array_size, disk_accesses); // We occupy the range_search auxiliar function
-    return sol_array; // return the array solutions with the points found   
+    range_search(node, Q, &sol_array, &array_size, disk_accesses);
+    return sol_array;   
 }

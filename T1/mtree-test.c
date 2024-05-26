@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
 #include "ss.c"
 
 // Function that returns a random double value between 0 and 1
@@ -21,19 +16,11 @@ int power_of_two(int exponent) {
 
 int main() {
 
-    // Linux
-    // Para compilar: gcc mtree-test.c -o mtree-test -lm
-    // Para ejecutar: ./mtree-test
-
-    // Windows
-    // Para compilar: gcc mtree-test.c -o mtree-test.exe
-    // Para ejecutar: .\mtree-test.exe
-
     // ======================
     // Determinar tamano de B
     // ======================
-    printf("tamano de entrada: %i\n", sizeof(Entry));
-    printf("tamano de B sería: %d\n", 4096 / sizeof(Entry));
+    printf("Entry size: %i\n", sizeof(Entry));
+    printf("B: %d\n\n", 4096 / sizeof(Entry));
 
     // =====================================================================================================
     // Creación set de puntos aleatorios para cada n entre 2**10 y 2**25 y set de consultas Q con 100 puntos
@@ -66,10 +53,8 @@ int main() {
         point_nums[i] = power_of_two(i + 10);
     }
 
-    // Imprimimos las cantidades para probar que funcionó
-    for (int i = 0; i < 16; i++) {
-        printf("Array %i size: %i\n", i+1, point_nums[i]);
-    }
+    // Imprimimos primera cantidad para probar que funcionó
+    printf("Array %i size: %i\n", 1, point_nums[0]);
 
     // Arreglo con punteros a cada arreglo de puntos
     Point *P[16];
@@ -92,30 +77,14 @@ int main() {
     // Testing
     // =======
 
-    // 1. Ciaccia Patella
-    // Arreglo con accesos a disco de cada número de puntos
-    int cp_disk_acceses[16];
-
-    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
-    printf("Begin experiment\n");
-    printf("Begin cp algorithm\n");
-    for (int i = 0; i < 1; i++) {
-        Node *cp_tree = ciacciaPatella(P[i], power_of_two(i + 10));
-        int acceses = 0;
-        for (int j = 0; j < 100; j++) {
-            Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
-        }
-        cp_disk_acceses[i] = acceses;
-    }
-    printf("Passed cp algorithm\n");
-    
-    // 2. Sexton Swinbank
+    // 1. Sexton Swinbank
     // Arreglo con accesos a disco de cada número de puntos
     int ss_disk_acceses[16];
 
     // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
-    printf("Begin ss algorithm\n");
-    for (int i = 0; i < 1; i++) {
+    printf("Begin experiment\n");
+    printf("Begin ss algorithm experiments\n");
+    for (int i = 0; i < 1; i++) { // Este ciclo for se debe modificar si se quieren realizar experimentos con más puntos
         Node *ss_tree = sextonSwinbank(P[i], point_nums[i]);
         int acceses = 0;
         for (int j = 0; j < 100; j++) {
@@ -123,10 +92,28 @@ int main() {
         }
         ss_disk_acceses[i] = acceses;
     }
-    printf("Passed ss algorithm\n");
-    printf("End experiment\n");
+    printf("Passed ss algorithm\n\n");
+    
+    // 2. Ciaccia Patella
+    // Arreglo con accesos a disco de cada número de puntos
+    int cp_disk_acceses[16];
 
-    // Imprimimos para probar que funcionó
+    // Iteramos en cada conjunto con las 100 consultas y almacenamos accesos
+    
+    printf("Begin cp algorithm experiments\n");
+    for (int i = 0; i < 1; i++) { // Este ciclo for se debe modificar si se quieren realizar experimentos con más puntos
+        Node *cp_tree = ciacciaPatella(P[i], point_nums[i]);
+        int acceses = 0;
+        for (int j = 0; j < 100; j++) {
+            Point *search = search_points_in_radio(cp_tree, Q[j], &acceses);
+        }
+        cp_disk_acceses[i] = acceses;
+    }
+    printf("Passed cp algorithm\n\n");
+    
+    printf("End experiment\n\n");
+
+    // Imprimimos accesos de cada conjunto de puntos
     for (int i = 0; i < 1; i++) {
         printf("CP acceses for set %i: %i\n", i + 1, cp_disk_acceses[i]);
         printf("SS acceses for set %i: %i\n", i + 1, ss_disk_acceses[i]);
