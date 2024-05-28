@@ -10,6 +10,7 @@ int getRandomInt(int v) {
     return dis(gen);
 }
 
+#if 0
 class Graph {
 private:
     vector<vector<pair<int, double>>> adjList;
@@ -38,6 +39,7 @@ public:
         }
     }
 };
+#endif
 
 // Función para generar un peso aleatorio en el rango (0, 1]
 double getRandomWeight() {
