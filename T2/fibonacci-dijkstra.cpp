@@ -44,17 +44,19 @@ class FibHeap {
 
             public:
 
-                double key; // Clave del nodo
                 bool mark;  // Booleano que indica si un nodo perdió un hijo y no es raíz (Se usa en el cut)
                 FibNode *parent; // Puntero al padre
                 FibNode *left;  // Puntero al nodo izquierdo en la lista enlazada
                 FibNode *right; // Puntero al nodo derecho en la lista enlazada
                 FibNode *child; // Puntero a un hijo
                 int degree; // Grado del nodo (Cantidad de hijos)
-                void *extra; // Puntero a información adicional (En nuestro caso el par (distancia, nodo) de Dijkstra)
+
+                double key; // Clave del nodo
+                std::pair<double, int> par; // Par (distancia, nodo) almacenado
 
                 // Constructor del Nodo del Heap de Fibonacci
-                FibNode(double key, void *extra) {
+                FibNode(double key, int vertex) 
+                    : par(key, vertex) { // Actualizar para que vertex sea Vertex
                     this->key = key;
                     this->mark = false;
                     this->parent = nullptr;
@@ -62,7 +64,6 @@ class FibHeap {
                     this->right = this;
                     this->child = nullptr;
                     this->degree = 0;
-                    this->extra = extra;
                 }
 
                 // Destructor
@@ -373,6 +374,7 @@ class FibHeap {
 
             // 3
             x->key = k;
+            x->par.first = k;
 
             // 4
             FibNode *y = x->parent;
