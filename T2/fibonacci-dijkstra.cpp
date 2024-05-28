@@ -498,7 +498,7 @@ class FibHeap {
 };
 
 // Algoritmo de Dijkstra con Heap de Fibonacci
-void dijkstraFibonacci(Graph graph, Graph::Vertex raiz) {
+pair<vector<double>,vector<int>> dijkstraFibonacci(Graph graph, Graph::Vertex raiz) {
 
     double INF = std::numeric_limits<double>::infinity();
 
@@ -563,6 +563,8 @@ void dijkstraFibonacci(Graph graph, Graph::Vertex raiz) {
     }
 
     // Parte 7.
-    return ; // Aquí no sé que retorna
+    pair<vector<double>, vector<int>> distancias_y_previos = make_pair(distancias, previos);
+
+    return distancias_y_previos; // Aquí podría retornar otra cosa
 
 }
