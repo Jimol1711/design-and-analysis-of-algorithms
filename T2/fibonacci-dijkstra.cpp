@@ -3,13 +3,20 @@
 // Grafo
 class Graph {
 
-    private:
-        vector<vector<pair<int, double>>> adjList;
+    public:
+
+        struct Vertex {
+            vector<pair<int, double>> neighbors;
+            void* nodeInHeap; // Puntero al nodo en el heap
+            int id;
+        };
+
+        vector<Vertex> adjList;
         int numVertices;
 
-    public:
         // Constructor
-        Graph(int numVertices) : numVertices(numVertices) {
+        Graph(int numVertices) 
+            : numVertices(numVertices) {
             adjList.resize(numVertices);
         }
 
@@ -20,20 +27,19 @@ class Graph {
         }
 
         // Mostrar el grafo
+        #if 0
         void printGraph() const {
             for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
                 cout << i << ": ";
-                for (const auto& neighbor : adjList[i]) {
+                for (const auto& neighbor : adjList[i]) { // Aquí hay un error con adjList cuando se define su tipo como Vertex
                     cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
                 }
                 cout << endl;
             }
         }
+        #endif
 
-        int getNumVertices() const {
-            return numVertices;
-        }
-};
+    };
 
 // Heap de Fibonacci
 class FibHeap {
@@ -52,11 +58,11 @@ class FibHeap {
                 int degree; // Grado del nodo (Cantidad de hijos)
 
                 double key; // Clave del nodo
-                std::pair<double, int> par; // Par (distancia, nodo) almacenado
+                std::pair<double, Graph::Vertex> par; // Par (distancia, nodo) almacenado
 
                 // Constructor del Nodo del Heap de Fibonacci
-                FibNode(double key, int vertex) 
-                    : par(key, vertex) { // Actualizar para que vertex sea Vertex
+                FibNode(double key, Graph::Vertex vertex) 
+                    : par(key, vertex) {
                     this->key = key;
                     this->mark = false;
                     this->parent = nullptr;
@@ -64,6 +70,9 @@ class FibHeap {
                     this->right = this;
                     this->child = nullptr;
                     this->degree = 0;
+
+                    // Asignar puntero al par en el heap
+                    par.second.nodeInHeap = (FibNode *)this;
                 }
 
                 // Destructor
@@ -489,15 +498,71 @@ class FibHeap {
 };
 
 // Algoritmo de Dijkstra con Heap de Fibonacci
-void dijkstraFibonacci(Graph graph, int raiz) {
+void dijkstraFibonacci(Graph graph, Graph::Vertex raiz) {
 
     double INF = std::numeric_limits<double>::infinity();
 
-    int numVertices = graph.getNumVertices(); //Warning erróneo de VSCode
+    int numVertices = graph.numVertices;
+
+    for (int i = 0; i < numVertices; i++) {
+        graph.adjList[i].id = i;
+    }
 
     // Parte 1.
     vector <double> distancias(numVertices, INF);
     vector <int> previos(numVertices, -1);
 
-    // WIP...
+    // Parte 2.
+    FibHeap fibHeap;
+
+    // Parte 3.
+    FibHeap::FibNode *nodoRaiz = new FibHeap::FibNode(0, raiz);
+
+    // Parte 4.
+    for (int i = 0; i < numVertices; i++) {
+        if (i != raiz.id) {
+            FibHeap::FibNode *nodo = new FibHeap::FibNode(INF, graph.adjList[i]);
+
+            // 4.1
+            distancias[i] = INF;
+            previos[i] = -1;
+
+            // 4.2
+            nodo->par.first = INF;
+            nodo->par.second = graph.adjList[i];
+
+            // Parte 5. (Es O(n) porque el insert tiene costo O(1) en el heap de Fibonacci)
+            fibHeap.insert(nodo);
+        }
+    }
+
+    // Parte 6.
+    while (fibHeap.min != nullptr) {
+        // a)
+        FibHeap::FibNode *u = fibHeap.extractMin();
+        std::pair<double, Graph::Vertex> par = u->par;
+
+        // b)
+        for (auto vecino : par.second.neighbors) {
+            int v = vecino.first;
+            double peso = vecino.second;
+
+            if (distancias[par.second.id] + peso < distancias[v]) {
+                distancias[v] = distancias[par.second.id] + peso;
+                previos[v] = par.second.id;
+
+                for (int i = 0; i < fibHeap.n; i++) {
+                    if (fibHeap.min->par.second.id == v) {
+                        fibHeap.decreaseKey(fibHeap.min, distancias[v]);
+                        break;
+                    }
+                    fibHeap.min = fibHeap.min->right;
+                }
+            }
+        }
+    }
+
+    // Parte 7.
+    return ; // Aquí no sé que retorna
+
 }
