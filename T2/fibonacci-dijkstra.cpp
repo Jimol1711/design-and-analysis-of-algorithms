@@ -9,6 +9,8 @@ class Graph {
             vector<pair<int, double>> neighbors;
             void* nodeInHeap; // Puntero al nodo en el heap
             int id;
+
+            Vertex(int id = 0) : id(id), nodeInHeap(nullptr) {}
         };
 
         vector<Vertex> adjList;
@@ -18,28 +20,29 @@ class Graph {
         Graph(int numVertices) 
             : numVertices(numVertices) {
             adjList.resize(numVertices);
+            for (int i = 0; i < numVertices; i++) {
+                adjList[i] = Vertex(i); // Initialize each vertex with its ID
+            }
         }
 
         // Añadir una arista con un peso
         void addEdge(int u, int v, double weight) {
-            adjList[u].emplace_back(v, weight);
-            adjList[v].emplace_back(u, weight);  // No dirigido
+            adjList[u].neighbors.emplace_back(v, weight);
+            adjList[v].neighbors.emplace_back(u, weight);  // No dirigido
         }
 
-        // Mostrar el grafo
-        #if 0
-        void printGraph() const {
-            for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
-                cout << i << ": ";
-                for (const auto& neighbor : adjList[i]) { // Aquí hay un error con adjList cuando se define su tipo como Vertex
-                    cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
+        // Print the adjacency list representation of the graph
+        void printGraph() {
+            for (int i = 0; i < numVertices; ++i) {
+                cout << "Vertex " << i << ":";
+                for (const auto& neighbor : adjList[i].neighbors) {
+                    cout << " -> (" << neighbor.first << ", " << neighbor.second << ")";
                 }
                 cout << endl;
             }
         }
-        #endif
 
-    };
+};
 
 // Heap de Fibonacci
 class FibHeap {
@@ -72,6 +75,7 @@ class FibHeap {
                     this->degree = 0;
 
                     // Asignar puntero al par en el heap
+                    
                     par.second.nodeInHeap = (FibNode *)this;
                 }
 
@@ -240,20 +244,44 @@ class FibHeap {
          *
          */
         void consolidate() {
-                
-            // 1, 2 y 3
+            #if 0
+            FibNode *w, *next, *x, *y, *temp;
+            FibNode **A, **rootList;
+
+            int d, rootSize;
             int Dn = static_cast<int>(log2(n)) + 1;
-            vector<FibNode *> A(Dn, nullptr);
+
+            // 1
+            A = new FibNode*[Dn + 2];
+
+            // 2, 3
+            for (int i = 0; i < Dn; i++) {
+                A[i] = nullptr;
+            }
 
             // 4
-            FibNode *w = min;
-            FibNode *x, *y;
-            int d;
+            w = min;
+            next = w;
+            rootSize = 1;
 
-            do {
+            while (next != w) {
+                rootSize++;
+                next = next->right;
+            }
+
+            rootList = new FibNode*[rootSize];
+
+            for (int i = 0; i < rootSize; i++) {
+                rootList[i] = next;
+                next = next->right;
+            }
+            
+            for (int i = 0; i < rootSize; i++) {
+
+                w = rootList[i];
+
                 // 5
                 x = w;
-                w = w->right;
 
                 // 6
                 d = x->degree;
@@ -268,7 +296,7 @@ class FibHeap {
                     if (x->key > y->key) {
 
                         // 10
-                        FibNode *temp = x;
+                        temp = x;
                         x = y;
                         y = temp;
                     }
@@ -285,13 +313,14 @@ class FibHeap {
 
                 // 14
                 A[d] = x;
-            } while (w != min);
+            }
+            delete [] rootList;
 
             // 15
             min = nullptr;
 
             // 16
-            for (int i = 0; i < Dn; i++) {
+            for (int i = 0; i < Dn + 2; i++) {
 
                 // 17
                 if (A[i] != nullptr) {
@@ -299,19 +328,21 @@ class FibHeap {
                     // 18
                     if (min == nullptr) {
 
-                        // 19
+                        // 19 y 20
+                        min = A[i];
                         A[i]->left = A[i];
                         A[i]->right = A[i];
 
                         // 20
-                        min = A[i];
+                        // min = A[i];
 
                     // 21
                     } else {
+                        printf("A[i]: %i and min: %i\n", A[i]->key, min->key);
                         min->left->right = A[i];
                         A[i]->left = min->left;
-                        A[i]->right = min;
                         min->left = A[i];
+                        A[i]->right = min;
 
                         // 22
                         if (A[i]->key < min->key) {
@@ -321,7 +352,96 @@ class FibHeap {
                         }
                     }
                 }
-            }      
+            }
+            delete [] A; 
+            #endif
+            FibNode* w, * next, * x, * y, * temp;
+            FibNode** A, ** rootList;
+            // Max degree <= log base golden ratio of n
+            int d, rootSize;
+            int max_degree = static_cast<int>(floor(log(static_cast<double>(n))/log(static_cast<double>(1 + sqrt(static_cast<double>(5)))/2)));
+
+            // 1
+            A = new FibNode*[max_degree+2]; // plus two both for indexing to max degree and so A[max_degree+1] == NIL
+            // 2, 3
+            std::fill_n(A, max_degree+2, nullptr);
+            // 4
+            w = min;
+            rootSize = 0;
+            next = w;
+            do
+            {
+            rootSize++;
+            next = next->right;
+            } while ( next != w );
+            rootList = new FibNode*[rootSize];
+            for ( int i = 0; i < rootSize; i++ )
+            {
+            rootList[i] = next;
+            next = next->right;
+            }
+            for ( int i = 0; i < rootSize; i++ )
+            {
+            w = rootList[i];
+            // 5
+            x = w;
+            // 6
+            d = x->degree;
+            // 7
+            while ( A[d] != nullptr )
+            {
+                // 8
+                y = A[d];
+                // 9
+                if ( y->key < x->key )
+                {
+                // 10
+                temp = x;
+                x = y;
+                y = temp;
+                }
+                // 11
+                fibHeapLink(y,x);
+                // 12
+                A[d] = nullptr;
+                // 13
+                d++;
+            }
+            // 14
+            A[d] = x;
+            }
+            delete [] rootList;
+            // 15
+            min = nullptr;
+            // 16
+            for ( int i = 0; i < max_degree+2; i++ )
+            {
+            // 17
+            if ( A[i] != nullptr )
+            {
+                // 18
+                if ( min == nullptr )
+                {
+                // 19, 20
+                min = A[i]->left = A[i]->right = A[i];
+                }
+                else
+                {
+                // 21
+                min->left->right = A[i];
+                A[i]->left = min->left;
+                min->left = A[i];
+                A[i]->right = min;
+                // 22
+                if ( A[i]->key < min->key )
+                {
+                    // 23
+                    min = A[i];
+                }
+                }
+            }
+            }
+            delete [] A;
         }
 
         /*

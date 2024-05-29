@@ -54,7 +54,7 @@ Graph generateRandomGraph(int v, int e) {
     set<pair<int, int>> existingEdges; // Para no repetir aristas
 
     // Crear un árbol cobertor mínimo para garantizar la conectividad
-    for (int i = 1; i < v; ++i) {
+    for (int i = 1; i < v; i++) {
         int randomNode = rand() % i;
         double weight = getRandomWeight();
         graph.addEdge(i, randomNode, weight);
@@ -76,7 +76,7 @@ Graph generateRandomGraph(int v, int e) {
 
     // Añadir las aristas restantes hasta alcanzar e aristas en total
     int additionalEdges = e - (v - 1);
-    for (int i = 0; i < additionalEdges && i < possibleEdges.size(); ++i) {
+    for (int i = 0; i < additionalEdges && i < possibleEdges.size(); i++) {
         int u = possibleEdges[i].first;
         int v = possibleEdges[i].second;
         double weight = getRandomWeight();
@@ -87,6 +87,7 @@ Graph generateRandomGraph(int v, int e) {
     return graph;
 }
 
+#if 0
 int main() {
     
     // Inicializar la semilla para rand()
@@ -107,7 +108,7 @@ int main() {
                 //dijkstraHeap(graph, raiz);
                 auto end1 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización heap
                 auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
-                //dijkstraFibonacci(graph, raiz);
+                // dijkstraFibonacci(graph, raiz);
                 auto end2 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización fibonacci
                 chrono::duration<double> duration1 = end1 - start1;   // Cálculo del tiempo transcurrido heap
                 chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
@@ -116,6 +117,55 @@ int main() {
             }
         }
     }
+
+    return 0;
+}
+#endif
+
+int main() {
+
+    // Inicializar la semilla para rand()
+    srand(static_cast<unsigned int>(time(nullptr)));
+
+    int i = 14;
+    int j = 22;
+
+    cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
+    int v = pow(2, i);
+    int e = pow(2, j);
+    int raiz_id = getRandomInt(v);
+    Graph graph = generateRandomGraph(v, e);
+    Graph::Vertex raiz = graph.adjList[raiz_id];
+    // graph.printGraph(); // Por si es necesario ver el grafo
+    // auto start1 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio heap
+    //dijkstraHeap(graph, raiz);
+    // auto end1 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización heap
+
+    for (int k = 16; k < 23; k++) {
+
+        cout << "----- Iteración " << k << std::endl;
+        int v = pow(2, i);
+        int e = pow(2, k);
+        int raiz_id = getRandomInt(v);
+        Graph graph = generateRandomGraph(v, e);
+        Graph::Vertex raiz = graph.adjList[raiz_id];
+        auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
+        dijkstraFibonacci(graph, raiz);
+        auto end2 = chrono::high_resolution_clock::now(); 
+
+        chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
+        // cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
+        cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
+
+    }
+
+    auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
+    dijkstraFibonacci(graph, raiz);
+    auto end2 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización fibonacci
+    // chrono::duration<double> duration1 = end1 - start1;   // Cálculo del tiempo transcurrido heap
+    chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
+    // cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
+    cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
 
     return 0;
 }
