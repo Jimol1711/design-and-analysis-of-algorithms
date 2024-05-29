@@ -363,9 +363,13 @@ class FibHeap {
             decreaseKey(x, std::numeric_limits<double>::lowest());
             extractMin();
         }
+
 };
 
 void dijkstraFibonacci(Graph& graph, int start) {
+
+    // Versión sin heapify
+    #if 1
     int n = graph.getNumVertices();
     vector<double> dist(n, numeric_limits<double>::infinity());
     vector<int> prev(n, -1);
@@ -400,6 +404,7 @@ void dijkstraFibonacci(Graph& graph, int start) {
             }
         }
     }
+    #endif
 
     #if 1
     cout << "Distancias desde el nodo " << start << ":\n";
@@ -427,7 +432,7 @@ int main() {
     // srand(static_cast<unsigned int>(time(nullptr)));
 
     // Ejemplo de uso:
-    int numVertices = pow(2, 10);
+    int numVertices = pow(2, 14);
     int numEdges = pow(2, 16);
 
     Graph graph = generateRandomGraph(numVertices, numEdges);
