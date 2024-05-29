@@ -683,11 +683,8 @@ pair<vector<double>,vector<int>> dijkstraFibonacci(Graph graph, Graph::Vertex ra
         }
     }
 
-    cout << distancias[467];
-
     // Parte 7.
-    pair<vector<double>, vector<int>> distancias_y_previos = make_pair(distancias, previos);
 
-    return distancias_y_previos; // Aquí podría retornar otra cosa
+    return {distancias, previos}; // Aquí podría retornar otra cosa
 
 }

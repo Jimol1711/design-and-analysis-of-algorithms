@@ -1,4 +1,5 @@
 #include "fibonacci-dijkstra.cpp"
+#include "dijkstra.hpp"
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -128,47 +129,30 @@ int main() {
     // Inicializar la semilla para rand()
     srand(static_cast<unsigned int>(time(nullptr)));
 
-    int i = 10;
-    int j = 22;
-
-    cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
-    int v = pow(2, i);
-    int e = pow(2, j);
-    int raiz_id = getRandomInt(v);
-    Graph graph = generateRandomGraph(v, e);
-    Graph::Vertex raiz = graph.adjList[raiz_id];
-    // graph.printGraph(); // Por si es necesario ver el grafo
-    // auto start1 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio heap
-    //dijkstraHeap(graph, raiz);
-    // auto end1 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización heap
-
-    for (int k = 16; k < 23; k++) {
-
-        cout << "----- Iteración " << k << std::endl;
-        int v = pow(2, i);
-        int e = pow(2, k);
-        int raiz_id = getRandomInt(v);
-        Graph graph = generateRandomGraph(v, e);
-        Graph::Vertex raiz = graph.adjList[raiz_id];
-        auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
-        std::pair<vector<double>,vector<int>> distancias_y_previos = dijkstraFibonacci(graph, raiz);
-        auto end2 = chrono::high_resolution_clock::now(); 
-
-        chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
-        // cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
-        cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
-        cout << "Una distancia: " << distancias_y_previos.first[467] << std::endl;
-        cout << "Unos previos: " << distancias_y_previos.second[84] << std::endl;
-
+    // Para ejecutar el algoritmo en cada par (i,j)
+    for (int i = 10; i <= 14; i+=2) {
+        for (int j = 16; j <= 22; j++) {
+            cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
+            for (int k = 0; k < 1; k++) { // k < 1 para testear como funciona, debería ser k < 50
+                cout << "----- Iteración " << k+1 << std::endl;
+                int v = pow(2, i);
+                int e = pow(2, j);
+                int raiz = getRandomInt(v);
+                Graph graph = generateRandomGraph(v, e);
+                // graph.printGraph(); // Por si es necesario ver el grafo
+                auto start1 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio heap
+                //dijkstraHeap(graph, raiz);
+                auto end1 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización heap
+                auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
+                //dijkstraFibonacci(graph, raiz);
+                auto end2 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización fibonacci
+                chrono::duration<double> duration1 = end1 - start1;   // Cálculo del tiempo transcurrido heap
+                chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
+                cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
+                cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
+            }
+        }
     }
-
-    auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
-    dijkstraFibonacci(graph, raiz);
-    auto end2 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización fibonacci
-    // chrono::duration<double> duration1 = end1 - start1;   // Cálculo del tiempo transcurrido heap
-    chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
-    // cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
-    cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
 
     return 0;
 }
