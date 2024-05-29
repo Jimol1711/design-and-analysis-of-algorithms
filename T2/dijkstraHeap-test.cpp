@@ -1,4 +1,55 @@
-#include "dijkstra.hpp"
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <cstdlib> // para rand() y srand()
+#include <ctime>   // para time()
+#include <bits/stdc++.h>
+#include <string>
+
+using namespace std;
+
+struct HeapNode {
+    double distance;
+    int node;
+
+    HeapNode(double d, int n) : distance(d), node(n) {} // constructor
+};
+
+struct Vertex {
+    vector<pair<int, double>> neighbors;
+    HeapNode* heapPtr;
+};
+
+vector<Vertex> generateRandomAdjList(int numNodes, int maxNeighbors) {
+    vector<Vertex> adjList(numNodes);
+    srand(time(0)); // inicializa la semilla para generación aleatoria
+
+    for (int i = 0; i < numNodes; ++i) {
+        int numNeighbors = rand() % maxNeighbors + 1; // número aleatorio de vecinos entre 1 y maxNeighbors
+
+        for (int j = 0; j < numNeighbors; ++j) {
+            int neighbor = rand() % numNodes; // vecino aleatorio
+            double weight = static_cast<double>(rand()) / RAND_MAX * 10.0; // peso aleatorio entre 0 y 10
+
+            // evita añadir un bucle a sí mismo (self-loop) y añade la arista solo si no existe ya
+            if (neighbor != i) {
+                bool exists = false;
+                for (const auto& pair : adjList[i].neighbors) {
+                    if (pair.first == neighbor) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    adjList[i].neighbors.push_back(make_pair(neighbor, weight));
+                    adjList[neighbor].neighbors.push_back(make_pair(i, weight)); // añade la arista en ambas direcciones
+                }
+            }
+        }
+    }
+
+    return adjList;
+}
 
 class Heap {
 private:
@@ -114,12 +165,12 @@ public:
     }
 };
 
-pair<vector<double>, vector<int>> dijkstraHeap(Graph graph, int source) {
+pair<vector<double>, vector<int>> dijkstraHeap(vector<Vertex>& adjList, int source) {
 
     // Definir el valor infinito
     double INF = numeric_limits<double>::infinity();
 
-    int numVertices = graph.getNumVertices();
+    int numVertices = adjList.size();
 
     /* Definimos los arreglos de distancias y previos. Como inicialmente estos arreglos comienzan con
     un valor por defecto excepto el elemento que hace referencia a la raíz, para hacerlo mas eficiente inicializamos
@@ -145,7 +196,7 @@ pair<vector<double>, vector<int>> dijkstraHeap(Graph graph, int source) {
     }
 
     // Hacemos la creacion del heap
-    Heap Q(array, graph.adjList);
+    Heap Q(array, adjList);
 
     // Mientras Q (el min heap) no se encuentre vacío, repetimos:
     while (!Q.isEmpty()) {
@@ -156,7 +207,7 @@ pair<vector<double>, vector<int>> dijkstraHeap(Graph graph, int source) {
         int v = minPair.node;
 
         // para cada vecino del nodo en el par obtenido
-        for (auto& neighbor : graph.adjList[v].neighbors) {
+        for (auto& neighbor : adjList[v].neighbors) {
 
             // id del nodo vecino de v representado como u en el enunciado
             int u = neighbor.first;
@@ -177,4 +228,36 @@ pair<vector<double>, vector<int>> dijkstraHeap(Graph graph, int source) {
     // Retornamos el arreglo de distancias y previos
     return {distances, previous};
 
+}
+
+int main() {
+    int numNodes = 10;
+    int maxNeighbors = 4; // máximo número de vecinos por nodo
+    vector<Vertex> adjList = generateRandomAdjList(numNodes, maxNeighbors);
+
+    // Imprime la lista de adyacencia para verificación
+    for (int i = 0; i < adjList.size(); ++i) {
+        cout << "Nodo " << i << ":";
+        for (const auto& neighbor : adjList[i].neighbors) {
+            cout << " -> (Vecino: " << neighbor.first << ", Peso: " << neighbor.second << ")";
+        }
+        cout << endl;
+    }
+
+    cout << "resultados: " << endl;
+
+    pair<vector<double>, vector<int>> output = dijkstraHeap(adjList, 4);
+    cout << "Distancias: ";
+    for (double dist : output.first) {
+        cout << dist << " ";
+    }
+    cout << endl;
+
+    cout << "Previos: ";
+    for (int prev : output.second) {
+        cout << prev << " ";
+    }
+    cout << endl;
+
+    return 0;
 }
