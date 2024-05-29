@@ -3,10 +3,18 @@
 
 using namespace std;
 
+// Función para generar un entero aleatorio en el rango [0, v - 1]
 int getRandomInt(int v) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, v - 1);
+    return dis(gen);
+}
+
+// Función para generar un peso aleatorio en el rango (0, 1]
+double getRandomWeight() {
+    static mt19937 gen(random_device{}());
+    static uniform_real_distribution<> dis(0.0001, 1.0);
     return dis(gen);
 }
 
@@ -40,13 +48,6 @@ public:
     }
 };
 #endif
-
-// Función para generar un peso aleatorio en el rango (0, 1]
-double getRandomWeight() {
-    static mt19937 gen(random_device{}());
-    static uniform_real_distribution<> dis(0.0001, 1.0);
-    return dis(gen);
-}
 
 // Función para generar un grafo aleatorio conexo
 Graph generateRandomGraph(int v, int e) {

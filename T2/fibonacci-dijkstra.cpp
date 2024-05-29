@@ -444,6 +444,7 @@ class FibHeap {
             delete [] A;
         }
 
+
         /*
          * Enlace de dos nodos en el Heap de Fibonacci
          *
@@ -659,21 +660,21 @@ pair<vector<double>,vector<int>> dijkstraFibonacci(Graph graph, Graph::Vertex ra
     // Parte 6.
     while (fibHeap.min != nullptr) {
         // a)
-        FibHeap::FibNode *u = fibHeap.extractMin();
-        std::pair<double, Graph::Vertex> par = u->par;
+        FibHeap::FibNode *v = fibHeap.extractMin();
+        std::pair<double, Graph::Vertex> par = v->par;
 
         // b)
         for (auto vecino : par.second.neighbors) {
-            int v = vecino.first;
+            int u = vecino.first;
             double peso = vecino.second;
 
-            if (distancias[par.second.id] > peso + distancias[v]) {
-                distancias[v] = distancias[par.second.id] + peso;
-                previos[v] = par.second.id;
+            if (distancias[u] > peso + distancias[par.second.id]) {
+                distancias[u] = distancias[par.second.id] + peso;
+                previos[u] = par.second.id;
 
                 for (int i = 0; i < fibHeap.n; i++) {
-                    if (fibHeap.min->par.second.id == v) {
-                        fibHeap.decreaseKey(fibHeap.min, distancias[v]);
+                    if (fibHeap.min->par.second.id == u) {
+                        fibHeap.decreaseKey(fibHeap.min, distancias[u]);
                         break;
                     }
                     fibHeap.min = fibHeap.min->right;
