@@ -4,14 +4,22 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <bits/stdc++.h>
+#include <limits>
+#include <random>
+#include <set>
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <chrono>
+//#include <bits/stdc++.h>
 
 using namespace std;
 
 int getRandomInt(int v) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, v - 1);
+    // Sembrar el generador de números aleatorios con el reloj del sistema
+    auto seed = chrono::system_clock::now().time_since_epoch().count();
+    static mt19937 gen(seed);
+    uniform_int_distribution<> dis(0, v - 1);
     return dis(gen);
 }
 
@@ -93,7 +101,7 @@ Graph generateRandomGraph(int v, int e) {
     }
 
     // Mezclar las aristas posibles para extraerlas luego aleatoriamente
-    std::shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
+    shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
 
     // Añadir las aristas restantes hasta alcanzar e aristas en total
     int additionalEdges = e - (v - 1);
