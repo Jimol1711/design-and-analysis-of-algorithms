@@ -667,7 +667,7 @@ pair<vector<double>,vector<int>> dijkstraFibonacci(Graph graph, Graph::Vertex ra
             int v = vecino.first;
             double peso = vecino.second;
 
-            if (distancias[par.second.id] + peso < distancias[v]) {
+            if (distancias[par.second.id] > peso + distancias[v]) {
                 distancias[v] = distancias[par.second.id] + peso;
                 previos[v] = par.second.id;
 
@@ -681,6 +681,8 @@ pair<vector<double>,vector<int>> dijkstraFibonacci(Graph graph, Graph::Vertex ra
             }
         }
     }
+
+    cout << distancias[467];
 
     // Parte 7.
     pair<vector<double>, vector<int>> distancias_y_previos = make_pair(distancias, previos);

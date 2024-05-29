@@ -127,7 +127,7 @@ int main() {
     // Inicializar la semilla para rand()
     srand(static_cast<unsigned int>(time(nullptr)));
 
-    int i = 14;
+    int i = 10;
     int j = 22;
 
     cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
@@ -150,12 +150,14 @@ int main() {
         Graph graph = generateRandomGraph(v, e);
         Graph::Vertex raiz = graph.adjList[raiz_id];
         auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
-        dijkstraFibonacci(graph, raiz);
+        std::pair<vector<double>,vector<int>> distancias_y_previos = dijkstraFibonacci(graph, raiz);
         auto end2 = chrono::high_resolution_clock::now(); 
 
         chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci
         // cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
         cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
+        cout << "Una distancia: " << distancias_y_previos.first[467] << std::endl;
+        cout << "Unos previos: " << distancias_y_previos.second[84] << std::endl;
 
     }
 
