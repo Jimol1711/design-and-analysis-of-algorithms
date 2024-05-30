@@ -13,13 +13,6 @@
 using namespace std;
 
 int getRandomInt(int v) {
-    #if 0
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, v - 1);
-    return dis(gen);
-    #endif
-
     // Sembrar el generador de números aleatorios con el reloj del sistema
     auto seed = std::chrono::system_clock::now().time_since_epoch().count();
     static std::mt19937 gen(seed);
@@ -368,8 +361,6 @@ class FibHeap {
 
 void dijkstraFibonacci(Graph& graph, int start) {
 
-    // Versión sin heapify
-    #if 1
     int n = graph.getNumVertices();
     vector<double> dist(n, numeric_limits<double>::infinity());
     vector<int> prev(n, -1);
@@ -404,7 +395,6 @@ void dijkstraFibonacci(Graph& graph, int start) {
             }
         }
     }
-    #endif
 
     #if 1
     cout << "Distancias desde el nodo " << start << ":\n";
@@ -432,14 +422,18 @@ int main() {
     // srand(static_cast<unsigned int>(time(nullptr)));
 
     // Ejemplo de uso:
-    int numVertices = pow(2, 14);
-    int numEdges = pow(2, 16);
+    int numVertices = pow(2, 12);
+    int numEdges = pow(2, 22);
 
     Graph graph = generateRandomGraph(numVertices, numEdges);
     // graph.printGraph();
 
     int startNode = getRandomInt(numVertices);
+    auto start1 = chrono::high_resolution_clock::now();
     dijkstraFibonacci(graph, startNode);
+    auto end1 = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration1 = end1 - start1;
+    cout << "Tiempo del algoritmo con cola de fibonacci: " << duration1.count() << " segundos" << std::endl;
 
     #if 0
     for (int i = 10; i <= 14; i+=2) {
