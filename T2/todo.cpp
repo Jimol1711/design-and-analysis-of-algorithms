@@ -1,120 +1,15 @@
-#include <iostream>
-#include <vector>
-#include <string>
-#include <limits>
-#include <random>
-#include <set>
-#include <algorithm>
-#include <cmath>
-#include <utility>
-#include <chrono>
-#include <bits/stdc++.h>
+#include "dijkstra.hpp"
 
-using namespace std;
-
-int getRandomInt(int v) {
-    // Sembrar el generador de números aleatorios con el reloj del sistema
-    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-    static std::mt19937 gen(seed);
-    std::uniform_int_distribution<> dis(0, v - 1);
-    return dis(gen);
-}
-
-struct HeapNode { // esto debería tener un nombre generalizado para heap y cola de fibonacci
-    double distance;
-    int node;
-
-    HeapNode(double d, int n) : distance(d), node(n) {} // constructor
-};
-
-struct Vertex {
-    vector<pair<int, double>> neighbors;
-    void* nodeInHeap; // Puntero al nodo en el heap
-};
-
-class Graph {
-public:
-    vector<Vertex> adjList;
-    int numVertices;
-
-    // Constructor
-    Graph(int numVertices) : numVertices(numVertices) {
-        adjList.resize(numVertices);
-    }
-
-    // Añadir una arista con un peso
-    void addEdge(int u, int v, double weight) {
-        adjList[u].neighbors.emplace_back(v, weight);
-        adjList[v].neighbors.emplace_back(u, weight);  // No dirigido
-    }
-
-    // Mostrar el grafo
-    void printGraph() const {
-        for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
-            cout << i << ": ";
-            for (const auto& neighbor : adjList[i].neighbors) {
-                cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
-            }
-            cout << endl;
-        }
-    }
-
-    int getNumVertices() {
-        return numVertices;
-    }
-};
-
-// Función para generar un peso aleatorio en el rango (0, 1]
-double getRandomWeight() {
-    static mt19937 gen(random_device{}());
-    static uniform_real_distribution<> dis(0.0001, 1.0);
-    return dis(gen);
-}
-
-// Función para generar un grafo aleatorio conexo
-Graph generateRandomGraph(int v, int e) {
-    Graph graph(v);
-    set<pair<int, int>> existingEdges; // Para no repetir aristas
-
-    // Crear un árbol cobertor mínimo para garantizar la conectividad
-    for (int i = 1; i < v; ++i) {
-        int randomNode = rand() % i;
-        double weight = getRandomWeight();
-        graph.addEdge(i, randomNode, weight);
-        existingEdges.emplace(min(i, randomNode), max(i, randomNode));
-    }
-
-    // Crear una lista de todas las posibles aristas adicionales
-    vector<pair<int, int>> possibleEdges;
-    for (int i = 0; i < v; ++i) {
-        for (int j = i + 1; j < v; ++j) {
-            if (existingEdges.find({i, j}) == existingEdges.end()) {
-                possibleEdges.emplace_back(i, j);
-            }
-        }
-    }
-
-    // Mezclar las aristas posibles para extraerlas luego aleatoriamente
-    std::shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
-
-    // Añadir las aristas restantes hasta alcanzar e aristas en total
-    int additionalEdges = e - (v - 1);
-    for (int i = 0; i < additionalEdges && i < possibleEdges.size(); ++i) {
-        int u = possibleEdges[i].first;
-        int v = possibleEdges[i].second;
-        double weight = getRandomWeight();
-        graph.addEdge(u, v, weight);
-        existingEdges.emplace(min(u, v), max(u, v));
-    }
-
-    return graph;
-}
-
-// Heap de Fibonacci
+/*
+ * Clase que representa un Heap de Fibonacci
+ */
 class FibHeap {
 
     public:
-        // Nodo del Heap de Fibonacci
+
+        /*
+         * Clase que representa un Nodo del Heap de Fibonacci
+         */        
         class FibNode {
 
         public:
@@ -155,6 +50,9 @@ class FibHeap {
             : n(0), min(nullptr) {
         }
 
+        /*
+         * Función que inserta un nodo en el Heap de Fibonacci
+         */
         void insert(FibNode* x) {
             x->degree = 0;
             x->parent = nullptr;
@@ -179,6 +77,9 @@ class FibHeap {
             n++;
         }
 
+        /*
+         * Función que extrae el nodo con la menor clave del Heap de Fibonacci
+         */
         FibNode* extractMin() {
             FibNode* z = min;
             if (z != nullptr) {
@@ -213,6 +114,9 @@ class FibHeap {
             return z;
         }
 
+        /*
+         * Función que consolida los nodos del Heap de Fibonacci
+         */
         void consolidate() {
             int max_degree = static_cast<int>(floor(log(static_cast<double>(n)) / log(static_cast<double>(1 + sqrt(static_cast<double>(5))) / 2)));
             FibNode** A = new FibNode * [max_degree + 2];
@@ -273,6 +177,9 @@ class FibHeap {
             delete[] A;
         }
 
+        /*
+         * Función que enlaza dos nodos en el Heap de Fibonacci
+         */
         void fibHeapLink(FibNode* y, FibNode* x) {
             y->left->right = y->right;
             y->right->left = y->left;
@@ -293,6 +200,9 @@ class FibHeap {
             y->mark = false;
         }
 
+        /*
+         * Función que disminuye la clave de un nodo en el Heap de Fibonacci
+         */
         void decreaseKey(FibNode* x, double k) {
             if (k > x->key) {
                 throw std::invalid_argument("New key is greater than current key");
@@ -311,6 +221,9 @@ class FibHeap {
             }
         }
 
+        /*
+         * Función que corta un nodo del Heap de Fibonacci
+         */
         void cut(FibNode* x, FibNode* y) {
             if (x->right == x) {
                 y->child = nullptr;
@@ -331,6 +244,9 @@ class FibHeap {
             x->mark = false;
         }
 
+        /*
+         * Función que realiza un corte en cascada en el Heap de Fibonacci
+         */
         void cascadingCut(FibNode* y) {
             FibNode* z = y->parent;
             if (z != nullptr) {
@@ -344,14 +260,23 @@ class FibHeap {
             }
         }
 
+        /*
+         * Función que verifica si el Heap de Fibonacci está vacío
+         */
         bool isEmpty() const {
             return min == nullptr;
         }
 
+        /*
+         * Función que encuentra el nodo con la menor clave en el Heap de Fibonacci
+         */
         FibNode* findMin() const {
             return min;
         }
 
+        /*
+         * Función que elimina un nodo del Heap de Fibonacci
+         */
         void deleteNode(FibNode* x) {
             decreaseKey(x, std::numeric_limits<double>::lowest());
             extractMin();
@@ -359,6 +284,9 @@ class FibHeap {
 
 };
 
+/*
+ * Función que implementa el algoritmo de Dijkstra con cola de Fibonacci
+ */
 void dijkstraFibonacci(Graph& graph, int start) {
 
     int n = graph.getNumVertices();
@@ -397,40 +325,45 @@ void dijkstraFibonacci(Graph& graph, int start) {
     }
 
     #if 1
-    cout << "Distancias desde el nodo " << start << ":\n";
+    cout << "Distancias desde el nodo " << start + 1 << ":\n";
     for (int i = 0; i < n; ++i) {
-        cout << "Distancia al nodo " << i << ": " << dist[i] << "\n";
+        cout << "Distancia al nodo " << i + 1 << ": " << dist[i] << "\n";
     }
     cout << endl;
 
-    cout << "Camino más corto desde el nodo " << start << ":\n";
+    cout << "Camino más corto desde el nodo " << start + 1 << ":\n";
     for (int i = 0; i < n; ++i) {
         if (dist[i] < numeric_limits<double>::infinity()) {
-            cout << "Camino hasta el nodo " << i << ": ";
+            cout << "Camino hasta el nodo " << i + 1 << ": ";
+            std::stack<int> nodes;
             for (int v = i; v != -1; v = prev[v]) {
-                cout << v << " ";
+                nodes.push(v + 1);
+            }
+            while (!nodes.empty()) {
+                cout << nodes.top() << " ";
+                nodes.pop();
             }
             cout << "\n";
         }
-    }
+    } 
     #endif
 }
 
 int main() {
 
     // Inicializar la semilla para rand()
-    // srand(static_cast<unsigned int>(time(nullptr)));
+    srand(static_cast<unsigned int>(time(nullptr)));
 
     // Ejemplo de uso:
-    int numVertices = pow(2, 12);
-    int numEdges = pow(2, 22);
+    int numVertices = pow(2, 10);
+    int numEdges = pow(2, 16);
 
     Graph graph = generateRandomGraph(numVertices, numEdges);
-    // graph.printGraph();
+    graph.printGraph();
 
-    int startNode = getRandomInt(numVertices);
+    int rootNode = getRandomInt(numVertices);
     auto start1 = chrono::high_resolution_clock::now();
-    dijkstraFibonacci(graph, startNode);
+    dijkstraFibonacci(graph, rootNode);
     auto end1 = chrono::high_resolution_clock::now();
     chrono::duration<double> duration1 = end1 - start1;
     cout << "Tiempo del algoritmo con cola de fibonacci: " << duration1.count() << " segundos" << std::endl;

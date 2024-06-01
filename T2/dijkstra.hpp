@@ -4,18 +4,35 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <limits>
+#include <random>
+#include <set>
+#include <algorithm>
+#include <cmath>
+#include <utility>
+#include <chrono>
+#include <stack>
 #include <bits/stdc++.h>
 
 using namespace std;
 
+// Función para obtener un entero aleatorio en el rango [0, v-1]
 int getRandomInt(int v) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    static std::mt19937 gen(seed);
     std::uniform_int_distribution<> dis(0, v - 1);
     return dis(gen);
 }
 
-struct HeapNode { // esto deberia tener nombre generalizado para heap y cola de fibonacci
+// Función para generar un peso aleatorio en el rango (0, 1]
+double getRandomWeight() {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    static thread_local std::mt19937 gen(seed); 
+    std::uniform_real_distribution<> dis(std::nextafter(0.0, 1.0), 1.0); 
+    return dis(gen);
+}
+
+struct HeapNode {
     double distance;
     int node;
 
@@ -24,50 +41,44 @@ struct HeapNode { // esto deberia tener nombre generalizado para heap y cola de 
 
 struct Vertex {
     vector<pair<int, double>> neighbors;
-    HeapNode* heapPtr;
+    void* nodeInHeap; // Puntero al nodo en el heap
 };
 
 class Graph {
-    private:
-        
-        int numVertices;
 
-    public:
-        vector<Vertex> adjList;
+private:
 
-        // Constructor
-        Graph(int numVertices) : numVertices(numVertices) {
-            adjList.resize(numVertices);
-        }
+    int numVertices;
 
-        // Añadir una arista con un peso
-        void addEdge(int u, int v, double weight) {
-            adjList[u].neighbors.emplace_back(v, weight);
-            adjList[v].neighbors.emplace_back(u, weight);  // No dirigido
-        }
+public:
+    vector<Vertex> adjList;
 
-        // Mostrar el grafo
-        void printGraph() const {
-            for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
-                cout << i << ": ";
-                for (const auto& neighbor : adjList[i].neighbors) {
-                    cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
-                }
-                cout << endl;
+    // Constructor
+    Graph(int numVertices) : numVertices(numVertices) {
+        adjList.resize(numVertices);
+    }
+
+    // Añadir una arista con un peso
+    void addEdge(int u, int v, double weight) {
+        adjList[u].neighbors.emplace_back(v, weight);
+        adjList[v].neighbors.emplace_back(u, weight);  // No dirigido
+    }
+
+    // Mostrar el grafo
+    void printGraph() const {
+        for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
+            cout << i + 1 << ": ";
+            for (const auto& neighbor : adjList[i].neighbors) {
+                cout << "(" << neighbor.first + 1 << ", " << neighbor.second << ") ";
             }
+            cout << endl;
         }
+    }
 
-        int getNumVertices() {
-            return numVertices;
-        }
+    int getNumVertices() {
+        return numVertices;
+    }
 };
-
-// Función para generar un peso aleatorio en el rango (0, 1]
-double getRandomWeight() {
-    static mt19937 gen(random_device{}());
-    static uniform_real_distribution<> dis(0.0001, 1.0);
-    return dis(gen);
-}
 
 // Función para generar un grafo aleatorio conexo
 Graph generateRandomGraph(int v, int e) {
