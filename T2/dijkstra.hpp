@@ -11,19 +11,28 @@
 #include <cmath>
 #include <utility>
 #include <chrono>
-//#include <bits/stdc++.h>
+#include <stack>
+#include <bits/stdc++.h>
 
 using namespace std;
 
+// Función para obtener un entero aleatorio en el rango [0, v-1]
 int getRandomInt(int v) {
-    // Sembrar el generador de números aleatorios con el reloj del sistema
-    auto seed = chrono::system_clock::now().time_since_epoch().count();
-    static mt19937 gen(seed);
-    uniform_int_distribution<> dis(0, v - 1);
+    auto seed = std::chrono::system_clock::now().time_since_epoch().count();
+    static std::mt19937 gen(seed);
+    std::uniform_int_distribution<> dis(0, v - 1);
     return dis(gen);
 }
 
-struct HeapNode { // esto deberia tener nombre generalizado para heap y cola de fibonacci
+// Función para generar un peso aleatorio en el rango (0, 1]
+double getRandomWeight() {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    static thread_local std::mt19937 gen(seed); 
+    std::uniform_real_distribution<> dis(std::nextafter(0.0, 1.0), 1.0); 
+    return dis(gen);
+}
+
+struct HeapNode {
     double distance;
     int node;
 
@@ -32,12 +41,13 @@ struct HeapNode { // esto deberia tener nombre generalizado para heap y cola de 
 
 struct Vertex {
     vector<pair<int, double>> neighbors;
-    HeapNode* heapPtr;
+    void* heapPtr; // Puntero al nodo en el heap
 };
 
 class Graph {
+
 private:
-    
+
     int numVertices;
 
 public:
@@ -57,9 +67,9 @@ public:
     // Mostrar el grafo
     void printGraph() const {
         for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
-            cout << i << ": ";
+            cout << i + 1 << ": ";
             for (const auto& neighbor : adjList[i].neighbors) {
-                cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
+                cout << "(" << neighbor.first + 1 << ", " << neighbor.second << ") ";
             }
             cout << endl;
         }
@@ -69,13 +79,6 @@ public:
         return numVertices;
     }
 };
-
-// Función para generar un peso aleatorio en el rango (0, 1]
-double getRandomWeight() {
-    static mt19937 gen(random_device{}());
-    static uniform_real_distribution<> dis(0.0001, 1.0);
-    return dis(gen);
-}
 
 // Función para generar un grafo aleatorio conexo
 Graph generateRandomGraph(int v, int e) {
@@ -101,7 +104,7 @@ Graph generateRandomGraph(int v, int e) {
     }
 
     // Mezclar las aristas posibles para extraerlas luego aleatoriamente
-    shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
+    std::shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
 
     // Añadir las aristas restantes hasta alcanzar e aristas en total
     int additionalEdges = e - (v - 1);

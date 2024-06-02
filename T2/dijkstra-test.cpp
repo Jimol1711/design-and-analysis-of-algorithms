@@ -1,9 +1,7 @@
-#include "dijkstra.hpp"
-#include "heap-dijkstra.cpp"
 #include "fibonacci-dijkstra.cpp"
 
 int main() {
-
+    
     // Inicializar la semilla para rand()
     srand(static_cast<unsigned int>(time(nullptr)));
 
@@ -22,7 +20,7 @@ int main() {
                 //dijkstraHeap(graph, raiz);
                 auto end1 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización heap
                 auto start2 = chrono::high_resolution_clock::now(); // Registro de tiempo de inicio fibonacci
-                //dijkstraFibonacci(graph, raiz);
+                // dijkstraFibonacci(graph, raiz);
                 auto end2 = chrono::high_resolution_clock::now();   // Registro de tiempo de finalización fibonacci
                 chrono::duration<double> duration1 = end1 - start1;   // Cálculo del tiempo transcurrido heap
                 chrono::duration<double> duration2 = end2 - start2;   // Cálculo del tiempo transcurrido fibonacci

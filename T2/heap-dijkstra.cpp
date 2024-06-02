@@ -97,7 +97,7 @@ public:
     void decreaseKey(int node, double newDistance) {
 
         // obtenemos el puntero al nodo en el heap y actualizamos la distancia del nodo
-        HeapNode* ptr = adjList[node].heapPtr;
+        HeapNode* ptr = (HeapNode *)adjList[node].heapPtr;
         ptr->distance = newDistance;
 
         // Obtener el índice del nodo en el heap (la resta de punteros devuelve un indice) y el indice de su padre
