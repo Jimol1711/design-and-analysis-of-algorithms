@@ -6,8 +6,8 @@ int main() {
     srand(static_cast<unsigned int>(time(nullptr)));
 
     // Para ejecutar el algoritmo en cada par (i,j)
-    for (int i = 10; i <= 14; i+=2) {
-        for (int j = 16; j <= 22; j++) {
+    for (int i = 14; i <= 14; i+=2) {
+        for (int j = 22; j <= 22; j++) {
             cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
             for (int k = 0; k < 1; k++) { // k < 1 para testear como funciona, debería ser k < 50
                 cout << "----- Iteración " << k+1 << std::endl;
