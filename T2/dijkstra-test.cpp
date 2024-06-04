@@ -10,8 +10,8 @@ int main() {
 
     for (int i = 10; i <= 14; i += 2) {
         for (int j = 16; j <= 22; ++j) {
-            heap_times[i][j].reserve(1);
-            fibonacci_times[i][j].reserve(1);
+            heap_times[i][j].reserve(50);
+            fibonacci_times[i][j].reserve(50);
         }
     }
 
@@ -19,7 +19,7 @@ int main() {
     for (int i = 10; i <= 14; i+=2) {
         for (int j = 16; j <= 22; j++) {
             cout << "--------------- Caso i=" << i << ", j=" << j << ": ---------------"<< std::endl;
-            for (int k = 0; k < 1; k++) { // k < 1 para testear como funciona, debería ser k < 50
+            for (int k = 0; k < 50; k++) { // k < 1 para testear como funciona, debería ser k < 50
                 cout << "----- Iteración " << k+1 << std::endl;
                 int v = pow(2, i);
                 int e = pow(2, j);
@@ -37,7 +37,7 @@ int main() {
                 cout << "Tiempo del algoritmo con heap: " << duration1.count() << " segundos" << std::endl;
                 cout << "Tiempo del algoritmo con cola de fibonacci: " << duration2.count() << " segundos" << std::endl;
                 heap_times[i][j].push_back(duration1.count());
-                fibonacci_times[i][j].push_back(duration1.count());
+                fibonacci_times[i][j].push_back(duration2.count());
             }
         }
     }
