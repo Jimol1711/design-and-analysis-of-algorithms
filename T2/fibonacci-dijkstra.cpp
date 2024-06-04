@@ -319,6 +319,11 @@ void dijkstraFibonacci(Graph& graph, int start) {
         }
     }
 
+    // Libera cualquier nodo restante en heapNodes
+    for (FibHeap::FibNode* node : heapNodes) {
+        delete node;
+    }
+
     #if 0
     cout << "Distancias desde el nodo " << start + 1 << ":\n";
     for (int i = 0; i < n; ++i) {
