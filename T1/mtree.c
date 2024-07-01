@@ -79,9 +79,10 @@ void range_search(Node* node, Query Q, Point** sol_array, int* array_size, int* 
     if (is_leaf(node)) {
         (*disk_accesses)++;
         for (int i=0; i<num_entries; i++) {
-            if(euclidean_distance(entries[i].p, q) <= r) {
+            Point p = entries[i].p;
+            if(euclidian_distance(p, q) <= r) {
                 *sol_array = (Point*)realloc(*sol_array, (*array_size) + 1 * sizeof(Point));
-                (*sol_array)[*array_size] = q;
+                (*sol_array)[*array_size] = p;
                 (*array_size)++;
             }
         }

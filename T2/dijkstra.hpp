@@ -58,9 +58,9 @@ public:
     // Mostrar el grafo
     void printGraph() const {
         for (int i = 0; i < 5; ++i) {   // i < 5 para que solo imprima los primeros 5 nodos
-            cout << i << ": ";
+            cout << i + 1 << ": ";
             for (const auto& neighbor : adjList[i].neighbors) {
-                cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
+                cout << "(" << neighbor.first + 1 << ", " << neighbor.second << ") ";
             }
             cout << endl;
         }
@@ -70,13 +70,6 @@ public:
         return numVertices;
     }
 };
-
-// Función para generar un peso aleatorio en el rango (0, 1]
-double getRandomWeight() {
-    static mt19937 gen(random_device{}());
-    static uniform_real_distribution<> dis(0.0001, 1.0);
-    return dis(gen);
-}
 
 // Función para generar un grafo aleatorio conexo
 Graph generateRandomGraph(int v, int e) {
@@ -102,7 +95,7 @@ Graph generateRandomGraph(int v, int e) {
     }
 
     // Mezclar las aristas posibles para extraerlas luego aleatoriamente
-    shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
+    std::shuffle(possibleEdges.begin(), possibleEdges.end(), mt19937(random_device()()));
 
     // Añadir las aristas restantes hasta alcanzar e aristas en total
     int additionalEdges = e - (v - 1);
