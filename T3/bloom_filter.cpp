@@ -3,8 +3,9 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "city.h" // importar cityHash
-#include "MurmurHash2.h" // importar murmurHash
+#include "./hashing/cityhash/src/city.h" // importar cityHash
+#include "./hashing/smhasher/src/MurmurHash2.h" // importar murmurHash
+
 
 using namespace std;
 
