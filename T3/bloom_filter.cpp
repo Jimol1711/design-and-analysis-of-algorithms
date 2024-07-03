@@ -98,7 +98,7 @@ public:
             // Simulamos las k funciones de hashing diferentes y ponemos en 1 las celdas que corresponden
             for (int i=0; i<k; i++) {
                 // g_i(x) = h1(x) + i*h2(x)
-                int k_hash_value = (city_hash + i*murmur_hash) % m;
+                int k_hash_value = (city_hash + i*murmur_hash) % m; // 20
 
                 // M[j] = 1, para cada j retornado por cada función de hash
                 M[k_hash_value] = true;
@@ -123,10 +123,10 @@ public:
         // N.end() entrega un iterador al elemento que sigue al último del vector.
         while (it != N.end()) {
             // Calcula el hash de la línea usando CityHash ( h1(x) )
-            uint32_t city_hash = CityHash32(it->c_str(), it->size());
+            uint32_t city_hash = CityHash32(it->c_str(), it->size()); // 10 
             
             // Calcula el hash de la línea usando MurmurHash ( h2(x) )
-            uint32_t murmur_hash = MurmurHash2(it->c_str(), it->size(), 0);
+            uint32_t murmur_hash = MurmurHash2(it->c_str(), it->size(), 0); // 15
 
             // variable que indicará si hay que eliminar el elemento del vector o no
             bool eliminar = false;
@@ -134,7 +134,7 @@ public:
             // Calculamos el valor del hash de la palabra actual del iterador para cada funcion de hash h_i 
             for (int i = 0; i < k; i++) {
                 // g_i(x) = h1(x) + i*h2(x)
-                int k_hash_value = (city_hash + i * murmur_hash) % m;
+                int k_hash_value = (city_hash + i * murmur_hash) % m; // 20
 
                 // Si una funcion da 0 (false), entonces la palabra no está y se debe eliminar de N
                 if (!M[k_hash_value]) {
@@ -155,8 +155,13 @@ public:
 
 };
 
-int main() {
-    printf("corre");
-    return 0;
+void main() {
+    
+    vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
+
+    grep("csv/Popular-Baby-Names-Final.csv", sequence);
+
+    BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
+    filter.search(sequence);
 }
 
