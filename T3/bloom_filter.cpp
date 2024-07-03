@@ -3,8 +3,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "./hashing/cityhash/src/city.h" // importar cityHash
-#include "./hashing/smhasher/src/MurmurHash2.h" // importar murmurHash
+#include "city.cpp" // importar cityHash
+#include "MurmurHash2.cpp" // importar murmurHash
 
 
 using namespace std;
@@ -75,8 +75,9 @@ private:
 public:
     // Constructor de BloomFilter. Asigna los atributos m y k. Además inicializa el array M
     // de tamaño m, con sus celdas en 0 (false).
-    BloomFilter(int array_size, int hash_count, string file_name) : m(array_size), k(hash_count), M(false, m), file_name(file_name) {
-        
+    BloomFilter(int array_size, int hash_count, string file_name) : m(array_size), k(hash_count), M(array_size, false), file_name(file_name) {
+
+
         // Abrimos el archivo .csv
         std::ifstream file(file_name);
         if (!file.is_open()) {
@@ -90,19 +91,21 @@ public:
         // Luego, con el resto de las lineas:
         while (getline(file, line)) {
             // Calcula el hash de la línea usando CityHash ( h1(x) )
-            uint32_t city_hash = CityHash32(line.c_str(), line.size());
+
+            uint64 city_hash = CityHash64(line.c_str(), line.size());
             
             // Calcula el hash de la linea usando MurmurHash ( h2(x) )
-            uint32_t murmur_hash = MurmurHash2(line.c_str(), line.size(), 0);
+            uint64_t murmur_hash = MurmurHash64A(line.c_str(), line.size(), 0);
 
             // Simulamos las k funciones de hashing diferentes y ponemos en 1 las celdas que corresponden
             for (int i=0; i<k; i++) {
                 // g_i(x) = h1(x) + i*h2(x)
                 int k_hash_value = (city_hash + i*murmur_hash) % m; // 20
 
-                // M[j] = 1, para cada j retornado por cada función de hash
+                // M[j] = 1, para cada j retornado por cada función dse hash
                 M[k_hash_value] = true;
             }
+            
         }
 
         file.close();
@@ -119,14 +122,13 @@ public:
     void search(vector<string>& N) {
 
         auto it = N.begin(); // iniciamos iterador en el primer elemento de N
-
         // N.end() entrega un iterador al elemento que sigue al último del vector.
         while (it != N.end()) {
-            // Calcula el hash de la línea usando CityHash ( h1(x) )
-            uint32_t city_hash = CityHash32(it->c_str(), it->size()); // 10 
+            // uint32_t city_hash = CityHash32(line.c_str(), line.size());
             
-            // Calcula el hash de la línea usando MurmurHash ( h2(x) )
-            uint32_t murmur_hash = MurmurHash2(it->c_str(), it->size(), 0); // 15
+            // Calcula el hash de la linea usando MurmurHash ( h2(x) )
+            uint64 city_hash = CityHash64(it->c_str(), it->size());
+            uint64_t murmur_hash = MurmurHash64A(it->c_str(), it->size(), 0);
 
             // variable que indicará si hay que eliminar el elemento del vector o no
             bool eliminar = false;
@@ -148,7 +150,7 @@ public:
             else
                 ++it;  // Avanza al siguiente elemento
         }
-
+        
         // En este punto N solo contiene las palabras que si podrían estar en el archivo, y aplicamos grep a N.
         grep(this->file_name, N);
     }
@@ -156,12 +158,13 @@ public:
 };
 
 void main() {
-    
+
     vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
 
     grep("csv/Popular-Baby-Names-Final.csv", sequence);
 
-    BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
-    filter.search(sequence);
+    // BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
+    // filter.search(sequence);
+    
 }
 
