@@ -23,6 +23,31 @@ using namespace std;
  * caso de codificar contraseñas o algo por el estilo).
  */
 
+
+void grep(const string& filename, const vector<string>& N) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error al abrir el archivo." << endl;
+        return;
+    }
+
+    string line;
+
+    for (auto& word : N) {
+        // Reiniciar el indicador de posición al inicio del archivo
+        file.clear();  // Limpiar cualquier bandera de error del archivo
+        file.seekg(0, ios::beg);  // Mover el indicador de posición al inicio
+
+        while (getline(file, line)) {
+            if (line.find(word) != string::npos) {
+                cout << line << endl;
+            }
+        }
+    }
+                                                    
+    file.close();
+}
+
 class BloomFilter {
 private:
     vector<bool> M; // arreglo M
@@ -68,7 +93,37 @@ public:
 
     }
 
-    // luego crear metodo de búsqueda, etc..
+    void search(vector<string>& N) {
+
+        auto it = N.begin();
+        while (it != N.end()) {
+            // Calcula el hash de la línea usando CityHash ( h1(x) )
+            uint32_t city_hash = CityHash32(it->c_str(), it->size());
+            
+            // Calcula el hash de la línea usando MurmurHash ( h2(x) )
+            uint32_t murmur_hash = MurmurHash2(it->c_str(), it->size(), 0);
+
+            bool eliminar = false;
+
+            // Simula las k funciones de hashing diferentes y pone en 1 las celdas que corresponden
+            for (int i = 0; i < k; i++) {
+                // g_i(x) = h1(x) + i*h2(x)
+                int k_hash_value = (city_hash + i * murmur_hash) % m;
+
+                if (!M[k_hash_value]) {
+                    eliminar = true;
+                    break;
+                }
+            }
+
+            if (eliminar)
+                it = N.erase(it);  // Borra el elemento y actualiza el iterador
+            else
+                ++it;  // Avanza al siguiente elemento
+        }
+
+        grep(this->file_name, N);
+    }
 
 };
 
