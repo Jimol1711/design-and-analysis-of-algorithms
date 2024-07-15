@@ -282,7 +282,7 @@ class FibHeap {
 /*
  * Función que implementa el algoritmo de Dijkstra con cola de Fibonacci
  */
-void dijkstraFibonacci(Graph& graph, int start) {
+pair<vector<double>, vector<int>> dijkstraFibonacci(Graph& graph, int start) {
 
     int n = graph.getNumVertices();
     vector<double> dist(n, numeric_limits<double>::infinity());
@@ -347,4 +347,6 @@ void dijkstraFibonacci(Graph& graph, int start) {
         }
     } 
     #endif
+
+    return {dist, prev};
 }

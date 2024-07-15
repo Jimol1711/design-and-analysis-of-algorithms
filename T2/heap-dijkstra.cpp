@@ -114,7 +114,7 @@ public:
     }
 };
 
-void dijkstraHeap(Graph graph, int source) {
+pair<vector<double>,vector<int>> dijkstraHeap(Graph graph, int source) {
 
     // Definir el valor infinito
     double INF = numeric_limits<double>::infinity();
@@ -175,6 +175,6 @@ void dijkstraHeap(Graph graph, int source) {
     }
 
     // Retornamos el arreglo de distancias y previos
-    // return {distances, previous};
+    return {distances, previous};
 
 }
