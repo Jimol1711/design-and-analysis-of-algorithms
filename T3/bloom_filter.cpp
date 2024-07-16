@@ -3,9 +3,11 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <math.h>
+#include <random>
+#include <ctime>
 #include "city.cpp" // importar cityHash
 #include "MurmurHash2.cpp" // importar murmurHash
-
 
 using namespace std;
 
@@ -16,9 +18,6 @@ using namespace std;
  * el filtro de Bloom utilizando solo dos funciones de hashing base, dado que se pueden simular
  * funciones de hash adicional a partir de las dos funciones de hash base de la siguiente forma:
  * g_i = h_1(x) + i*h_2(x).
- * 
- * Otra manera sería crear una familia universal (como aparece en el apunte),
- * aunque habría que ver como encontrar un primo >= N, con N el tamaño del Universo. ¿...?
  * 
  * Las funciones de hash escogidas son arbitrarias, obviamente, tomando algunas conocidas por 
  * su rapidez y buena dispersión. Además, es preferible que sean no criptográficas, pues tienen
@@ -113,7 +112,7 @@ public:
     }
 
     /** Método que realiza la búsqueda utilizando filtro de Bloom.
-     * Por cada palabra en la secuencia N, vemos si los indices que devuelvenentregados por las k funciones de 
+     * Por cada palabra en la secuencia N, vemos si los indices que devuelve entregados por las k funciones de 
      * hash están en 1 (true) en el arreglo M. Si es así, puede que esa palabra realmente esté en el archivo
      * abierto. En caso contrario, sin error la palabra no está en el archivo, por lo tanto quitamos esa palabra
      * de la secuencia N (quitamos el elemento del arreglo). Finalmente en N nos quedamos solo con las palabras 
@@ -156,17 +155,3 @@ public:
     }
 
 };
-
-int main() {
-
-    vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
-
-    grep("csv/Popular-Baby-Names-Final.csv", sequence);
-
-    BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
-    filter.search(sequence);
-
-    return 0;
-    
-}
-
