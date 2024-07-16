@@ -157,14 +157,16 @@ public:
 
 };
 
-void main() {
+int main() {
 
     vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
 
     grep("csv/Popular-Baby-Names-Final.csv", sequence);
 
-    // BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
-    // filter.search(sequence);
+    BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
+    filter.search(sequence);
+
+    return 0;
     
 }
 
