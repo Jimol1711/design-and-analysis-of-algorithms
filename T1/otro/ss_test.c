@@ -368,25 +368,24 @@ void removeCluster(ClusterArray* C, int pos) {
 // Función que añade una entrada a un nodo
 void addEntryInNode(Node* N, Entry* e) {
     /* Caso por si dejamos el arreglo de entradas sin tamaño fijo */
-    
-    if (N->num_entries == 0) {
-        N->entries = (Entry *)malloc(sizeof(Entry));
-        N->entries[N->num_entries] = *e;
-        N->num_entries++;
+    /*
+    if (N.num_entries == 0) {
+        N.entries = (Entry *)malloc(sizeof(Entry));
+        N.entries[N.num_entries] = e;
+        N.num_entries++;
     }
     else {
-        N->entries = (Entry *)realloc(N->entries, (N->num_entries + 1) * sizeof(Entry));
-        N->entries[N->num_entries] = *e;
-        N->num_entries++;
+        N.entries = (Entry *)realloc(N.entries, (N.num_entries + 1) * sizeof(Entry));
+        N.entries[N.num_entries] = e;
+        N.num_entries++;
     }
-    /*
-    N->entries[N->num_entries] = *e;
-    N->num_entries++;
     */
+   N->entries[N->num_entries] = *e;
+   N->num_entries++;
 }
 
 // Función que añade un punto a un cluster
-void addPointInCluster(Cluster* C, Point* p) {
+void addPointInCluster(Cluster* C, Point* p) {    // ################################# empecé a cambiar desde acá y dejó de funcionar
     if (C->size == 0) {
         C->points = (Point *)malloc(sizeof(Point));
         C->points[C->size] = *p;
@@ -498,8 +497,7 @@ ClusterArray cluster(Cluster C_in) {
     }
     */
     while (C.size > 1) { /*-------------------------------pareciera estar bien ahora---------------------------*/
-        printf("%d\n", C.size);
-        int* pos_C_mas_cercanos = closest_pair(&C); // muy ineficiente
+        int* pos_C_mas_cercanos = closest_pair(&C);
         int pos_c1, pos_c2;
         if (C.clusters[pos_C_mas_cercanos[0]].size >= C.clusters[pos_C_mas_cercanos[1]].size){
             pos_c1 = pos_C_mas_cercanos[0];
@@ -568,8 +566,10 @@ Entry OutputHoja(Cluster C_in) {
     printf("paso 1 hoja\n");
     Point g = primary_medoid(&C_in);
     double r = 0;
-    Entry *C_entries;
-    Node C = {C_entries, 0};
+    Node C;
+    Entry C_entries[B];
+    C.entries = C_entries;
+    C.num_entries = 0;
     /* 2. */
     printf("paso 2 hoja\n");
     for (int i = 0; i < C_in.size; i++) {
@@ -594,8 +594,10 @@ Entry OutputInterno(EntryArray C_mra) {
     Cluster C_in = pointsInEntryArray(C_mra);
     Point G = primary_medoid(&C_in);
     double R = 0.0;
-    Entry *C_entries;
-    Node C = {C_entries, 0};
+    Node C;
+    Entry C_entries[B];
+    C.entries = C_entries;
+    C.num_entries = 0;
     /* 2. */
     printf("paso 2 interno\n");
     for (int i = 0; i < C_mra.size; i++) {
@@ -638,7 +640,6 @@ Node *sextonSwinbank(Point* P, int P_size) {
         Entry hoja_c = OutputHoja(c);
         addEntryInEntryArray(&C, &hoja_c);
     }
-    printf("%d\n", C.size);
     /* 4. */
     printf("paso 4 ss\n");
     while (C.size > B) {
