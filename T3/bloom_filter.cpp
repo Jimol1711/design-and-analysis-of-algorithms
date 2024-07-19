@@ -33,13 +33,20 @@ using namespace std;
  * Parametros:
  * filename: el archivo en el cual se realizará la búsqueda
  * N : Secuencia de palabras representado por un vector, donde sus elementos son strings.
+ * 
+ * Return: 
+ *  int coincidences: El numero de palabras en N encontradas en el archivo.
  */
-void grep(const string& filename, const vector<string>& N) {
+int grep(const string& filename, const vector<string>& N) {
+
+    // Variable que cuenta el numero de palabras encontradas en el archivo 
+    int coincidences = 0;
+
     // Abrimos el archivo
     std::ifstream file(filename);
     if (!file.is_open()) {
         cerr << "Error al abrir el archivo." << endl;
-        return;
+        return -1;
     }
 
     // Variable donde se almacenará los string de cada linea
@@ -53,15 +60,19 @@ void grep(const string& filename, const vector<string>& N) {
         file.seekg(0, ios::beg);  // Mover el indicador de posición al inicio
 
         // Se recorre cada linea del archivo buscando coincidencias con la palabra actual de la iteracion
-        // .find devuelve la posición de la primera aparición de una subcadena. Si no la encuentra, devuelve string::npos
         while (getline(file, line)) {
             if (line == word) {
+                coincidences++;
                 cout << line << endl;
+                break;
             }
         }
     }
 
+    // Cerramos el archivo que abrimos inicialmente
     file.close();
+
+    return coincidences;
 }
 
 class BloomFilter {
@@ -121,7 +132,11 @@ public:
      */
     void search(vector<string>& N) {
 
+        // tamaño inicial de N, es decir, el numero de palabras en el vector
+        int N_initial_size = N.size();
+
         auto it = N.begin(); // iniciamos iterador en el primer elemento de N
+
         // N.end() entrega un iterador al elemento que sigue al último del vector.
         while (it != N.end()) {
             // uint32_t city_hash = CityHash32(line.c_str(), line.size());
@@ -136,7 +151,7 @@ public:
             // Calculamos el valor del hash de la palabra actual del iterador para cada funcion de hash h_i 
             for (int i = 0; i < k; i++) {
                 // g_i(x) = h1(x) + i*h2(x)
-                int k_hash_value = (city_hash + i * murmur_hash) % m; // 20
+                int k_hash_value = (city_hash + i * murmur_hash) % m; 
 
                 // Si una funcion da 0 (false), entonces la palabra no está y se debe eliminar de N
                 if (!M[k_hash_value]) {
@@ -150,21 +165,29 @@ public:
             else
                 ++it;  // Avanza al siguiente elemento
         }
-        
+
+        // Cantidad de palabras que quedan en N despues de hacer el filtro en el vector 
+        int N_final_size = N.size();
+
         // En este punto N solo contiene las palabras que si podrían estar en el archivo, y aplicamos grep a N.
-        grep(this->file_name, N);
+        int coincidences = grep(this->file_name, N);
+        cout << "coincidencias reales:" << coincidences << endl;
+        
+        // Prob. de error del filtro.
+        double p = double(N_final_size - coincidences) / N_initial_size;
+        cout << "La probabilidad de error es:" << p << endl;
     }
 
 };
 
 int main() {
 
-    vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
+    vector<string> sequence = {"CRISTIANORONALDOOO", "ANDRES", "dsfklñgjikldfjldf"};
 
-    grep("csv/Popular-Baby-Names-Final.csv", sequence);
+    // grep("csv/Popular-Baby-Names-Final.csv", sequence);
 
-    // BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
-    // filter.search(sequence);
+    BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
+    filter.search(sequence);
 
     return 0;
     
