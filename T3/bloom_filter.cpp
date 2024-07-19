@@ -189,6 +189,22 @@ int main() {
 
     vector<string> sequence = {"CRISTIANORONALDOOO", "ANDRES", "dsfklñgjikldfjldf"};
 
+    // Tamaños de N y proporciones
+    vector<int> N_sizes = {1024, 4096, 16384, 65536};
+    vector<double> proportions = {0, 0.25, 0.5, 0.75, 1};
+
+    // Se vectorizan los archivos csv
+    vector<string> vectorized_babies = vectorizeCSV("csv/Popular-Baby-Names-Final.csv");
+    vector<string> vectorized_movies = vectorizeCSV("csv/Filtered-Movies.csv");
+
+    vector<vector<string>> sequences;
+
+    for (int i=0; i<N_sizes.size(); i++) {
+        for (int j=0; j<proportions.size(); j++) {
+            sequences.push_back(replaceRandomWords(vectorized_babies, vectorized_movies, N_sizes[i], proportions[j]));
+        }
+    }
+
     // grep("csv/Popular-Baby-Names-Final.csv", sequence);
 
     BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
