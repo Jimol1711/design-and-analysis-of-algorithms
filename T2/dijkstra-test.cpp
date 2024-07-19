@@ -1,3 +1,5 @@
+#include "dijkstra.hpp"
+#include "heap-dijkstra.cpp"
 #include "fibonacci-dijkstra.cpp"
 #include <fstream>
 
