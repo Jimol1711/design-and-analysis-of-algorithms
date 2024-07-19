@@ -68,7 +68,7 @@ int grep(const string& filename, const vector<string>& N) {
         while (getline(file, line)) {
             if (line == word) {
                 coincidences++;
-                cout << line << endl;
+                // cout << line << endl;
                 break;
             }
         }
@@ -463,8 +463,20 @@ int main() {
 
     // grep("csv/Popular-Baby-Names-Final.csv", sequence);
 
-    BloomFilter filter(1000, 50, "csv/Popular-Baby-Names-Final.csv");
-    filter.search(sequences[6]);
+    // Número de elementos a insertar
+    int n = 4096;
+    // Probabilidad de error deseada
+    double p = 0.01;
+
+    // Cálculo de m y k
+    int m = static_cast<int>(- (n * log(p)) / (log(2) * log(2)));
+    int k = static_cast<int>((m / n) * log(2));
+
+    cout << "Tamaño del arreglo (M): " << m << " bits" << endl;
+    cout << "Número de funciones de hash (k): " << k << endl;
+
+    BloomFilter filter(m, k, "csv/Popular-Baby-Names-Final.csv");
+    filter.search(sequences[8]);
 
     return 0;
     
