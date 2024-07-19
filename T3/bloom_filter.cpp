@@ -3,7 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include "city.cpp" // importar cityHash
+#include "City.cpp" // importar cityHash
 #include "MurmurHash2.cpp" // importar murmurHash
 
 
@@ -55,7 +55,7 @@ void grep(const string& filename, const vector<string>& N) {
         // Se recorre cada linea del archivo buscando coincidencias con la palabra actual de la iteracion
         // .find devuelve la posición de la primera aparición de una subcadena. Si no la encuentra, devuelve string::npos
         while (getline(file, line)) {
-            if (line.find(word) != string::npos) {
+            if (line == word) {
                 cout << line << endl;
             }
         }
@@ -157,7 +157,7 @@ public:
 
 };
 
-void main() {
+int main() {
 
     vector<string> sequence = {"ANDRES", "JUAN", "VICENTE"};
 
@@ -165,6 +165,8 @@ void main() {
 
     // BloomFilter filter(100, 5, "csv/Popular-Baby-Names-Final.csv");
     // filter.search(sequence);
+
+    return 0;
     
 }
 
