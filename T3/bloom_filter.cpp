@@ -12,7 +12,7 @@
 #include <unordered_set>
 #include <ostream>
 #include <cmath>
-#include "city.cpp" // importar cityHash
+#include "City.cpp" // importar cityHash
 #include "MurmurHash2.cpp" // importar murmurHash
 
 using namespace std;
@@ -161,3 +161,197 @@ public:
     }
 
 };
+
+// From here on is bloom_filter-test.cpp
+
+// Function to read a CSV file and return a vector of strings
+vector<string> vectorizeCSV(const string& file) {
+    // Open the file
+    ifstream infile(file);
+    if (!infile.is_open()) {
+        cerr << "Error opening file." << endl;
+        return {};
+    }
+
+    // Vector to store the words
+    vector<string> words;
+    string line;
+
+    getline(infile, line); // Skip the first line
+
+    // Read each line of the file
+    while (getline(infile, line)) {
+        words.push_back(line);
+    }
+
+    // Close the file
+    infile.close();
+
+    return words;
+}
+
+// Function to generate a random integer within a range
+int getRandomInt(int max_value) {
+    auto seed = chrono::system_clock::now().time_since_epoch().count();
+    static mt19937 gen(seed);
+    uniform_int_distribution<> dis(0, max_value - 1);
+    return dis(gen);
+}
+
+// Función que retorna un vector con n palabras de words1 reemplazando n*p de words2
+vector<string> replaceRandomWords(
+    const vector<string>& words1,
+    const vector<string>& words2,
+    int n,
+    double p
+) {
+    
+    // Create a vector of n strings from words1
+    vector<string> result;
+    int numWords = min(static_cast<int>(words1.size()), n);
+    result.reserve(n);
+    for (int i = 0; i < numWords; ++i) {
+        result.push_back(words1[i]);
+    }
+    
+    // Calculate the number of words to replace
+    int numReplacements = static_cast<int>(n * p);
+    numReplacements = min(numReplacements, static_cast<int>(words2.size()));
+    
+    // Seed for random number generation
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(0, static_cast<int>(result.size()) - 1);
+    
+    // Replace random words from words2
+    for (int i = 0; i < numReplacements; ++i) {
+        int index = dis(gen);
+        result[index] = words2[dis(gen) % words2.size()];
+    }
+    
+    return result;
+}
+
+// From here on is csv-filter.cpp
+
+// Function to read words from a file into a set
+unordered_set<string> readWordsFromFile(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error opening the file: " << filename << endl;
+        return {};
+    }
+
+    unordered_set<string> words;
+    string line;
+
+    // Read each line from the file and insert into the set
+    while (getline(file, line)) {
+        words.insert(line);
+    }
+
+    file.close();
+    return words;
+}
+
+// Function to read words from a file into a vector
+vector<string> readWordsIntoVector(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error opening the file: " << filename << endl;
+        return {};
+    }
+
+    vector<string> words;
+    string line;
+
+    // Read each line from the file and insert into the vector
+    while (getline(file, line)) {
+        words.push_back(line);
+    }
+
+    file.close();
+    return words;
+}
+
+// Function to write words from a vector to a file
+void writeWordsToFile(const vector<string>& words, const string& filename) {
+    ofstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error opening the file: " << filename << endl;
+        return;
+    }
+
+    for (const auto& word : words) {
+        file << word << endl;
+    }
+
+    file.close();
+}
+
+// Function to filter words
+void filterWords(const string& file1, const string& file2, const string& outputFile) {
+    // Read words from the first file into a set
+    unordered_set<string> filterWords = readWordsFromFile(file1);
+
+    // Read words from the second file into a vector
+    vector<string> wordsToFilter = readWordsIntoVector(file2);
+
+    // Vector to store filtered words
+    vector<string> filteredWords;
+
+    // Filter words that are not in the filterWords set
+    for (const auto& word : wordsToFilter) {
+        if (filterWords.find(word) == filterWords.end()) {
+            filteredWords.push_back(word);
+        }
+    }
+
+    // Write the filtered words to the output file
+    writeWordsToFile(filteredWords, outputFile);
+}
+
+int main() {
+
+    // Tamaños de N y proporciones
+    vector<int> N_sizes = {1024, 4096, 16384, 65536};
+    vector<double> proportions = {0, 0.25, 0.5, 0.75, 1};
+
+    // Se vectorizan los archivos csv
+    vector<string> vectorized_babies = vectorizeCSV("csv/Popular-Baby-Names-Final.csv");
+    vector<string> vectorized_movies = vectorizeCSV("csv/Filtered-Movies.csv");
+
+    vector<vector<string>> sequences;
+
+    for (int i=0; i<N_sizes.size(); i++) {
+        for (int j=0; j<proportions.size(); j++) {
+            sequences.push_back(replaceRandomWords(vectorized_babies, vectorized_movies, N_sizes[i], proportions[j]));
+        }
+    }
+
+    vector<string> sequence = {"CRISTIANORONALDOOO", "ANDRES", "dsfklñgjikldfjldf"};
+
+    // Tamaños de N y proporciones
+    vector<int> N_sizes = {1024, 4096, 16384, 65536};
+    vector<double> proportions = {0, 0.25, 0.5, 0.75, 1};
+
+    // Se vectorizan los archivos csv
+    vector<string> vectorized_babies = vectorizeCSV("csv/Popular-Baby-Names-Final.csv");
+    vector<string> vectorized_movies = vectorizeCSV("csv/Filtered-Movies.csv");
+
+    vector<vector<string>> sequences;
+
+    for (int i=0; i<N_sizes.size(); i++) {
+        for (int j=0; j<proportions.size(); j++) {
+            sequences.push_back(replaceRandomWords(vectorized_babies, vectorized_movies, N_sizes[i], proportions[j]));
+        }
+    }
+
+    // grep("csv/Popular-Baby-Names-Final.csv", sequence);
+
+    BloomFilter filter(1000, 50, "csv/Popular-Baby-Names-Final.csv");
+    filter.search(sequences[6]);
+
+    return 0;
+    
+}
