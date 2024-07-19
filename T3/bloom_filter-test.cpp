@@ -141,6 +141,40 @@ vector<string> replaceRandomWords(const vector<string>& words1, const vector<str
     return result;
 }
 
+// Función que retorna un vector con n palabras de words1 reemplazando n*p de words2
+vector<string> replaceRandomWords(
+    const vector<string>& words1,
+    const vector<string>& words2,
+    int n,
+    double p
+) {
+    
+    // Create a vector of n strings from words1
+    vector<string> result;
+    int numWords = min(static_cast<int>(words1.size()), n);
+    result.reserve(n);
+    for (int i = 0; i < numWords; ++i) {
+        result.push_back(words1[i]);
+    }
+    
+    // Calculate the number of words to replace
+    int numReplacements = static_cast<int>(n * p);
+    numReplacements = min(numReplacements, static_cast<int>(words2.size()));
+    
+    // Seed for random number generation
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dis(0, static_cast<int>(result.size()) - 1);
+    
+    // Replace random words from words2
+    for (int i = 0; i < numReplacements; ++i) {
+        int index = dis(gen);
+        result[index] = words2[dis(gen) % words2.size()];
+    }
+    
+    return result;
+}
+
 int main() {
 
     // Tamaños de N y proporciones
@@ -151,57 +185,11 @@ int main() {
     vector<string> vectorized_babies = vectorizeCSV("csv/Popular-Baby-Names-Final.csv");
     vector<string> vectorized_movies = vectorizeCSV("csv/Filtered-Movies.csv");
 
-    #if 0
-    vector<int> words_to_select = {};
+    vector<vector<string>> sequences;
+
     for (int i=0; i<N_sizes.size(); i++) {
         for (int j=0; j<proportions.size(); j++) {
-            words_to_select.push_back(N_sizes[i] * proportions[j]);
-        }
-    }
-
-    // Se crean las secuencias de N palabras sin películas
-    vector<vector<string>> N_sequences_no_movies = {};
-    vector<string> vectorized_babies = vectorizeCSV("csv/Popular-Baby-Names-Final.csv");
-    vector<string> vectorized_movies = vectorizeCSV("csv/Filtered-Movies.csv");
-
-    // Se insertan nombres en las secuencias
-    for (int i=0; i<4; i++) {
-        for (int j=0; j<N_sizes[i]; j++) {
-            N_sequences_no_movies[i].push_back(vectorized_babies[j]);
-        }
-    }
-
-    // Se crean secuencias N
-    vector<vector<string>> N_sequences;
-    for (int i=0; i<4; i++) {
-        N_sequences.push_back(replaceRandomWords(N_sequences_no_movies[i], vectorized_movies, words_to_select[i]));
-    }
-    #endif
-
-        int seq_num = 1;
-
-    for (int i = 0; i < N_sizes.size(); ++i) {
-        int N = N_sizes[i];
-
-        for (int j = 0; j < proportions.size(); ++j) {
-            double p = proportions[j];
-            int num_movies = static_cast<int>(N * p);
-            int num_babies = N - num_movies;
-
-            vector<string> sequence;
-            sequence.insert(sequence.end(), vectorized_babies.begin(), vectorized_babies.begin() + num_babies);
-            sequence.insert(sequence.end(), vectorized_movies.begin(), vectorized_movies.begin() + num_movies);
-
-            shuffle(sequence.begin(), sequence.end(), mt19937{random_device{}()});
-
-            // Generate a filename for the sequence
-            string filename = "sequence_" + to_string(seq_num) + "_N" + to_string(N) + "_p" + to_string(static_cast<int>(p * 100)) + ".csv";
-            writeCSV(filename, sequence);
-
-            // Print the generated sequence for verification
-            cout << "Sequence " << seq_num << " for N = " << N << " and p = " << p << " written to " << filename << endl;
-
-            seq_num++;
+            sequences.push_back(replaceRandomWords(vectorized_babies, vectorized_movies, N_sizes[i], proportions[j]));
         }
     }
 
