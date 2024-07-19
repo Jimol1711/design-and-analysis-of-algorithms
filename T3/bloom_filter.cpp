@@ -6,6 +6,12 @@
 #include <math.h>
 #include <random>
 #include <ctime>
+#include <chrono>
+#include <algorithm>
+#include <numeric>
+#include <unordered_set>
+#include <ostream>
+#include <cmath>
 #include "city.cpp" // importar cityHash
 #include "MurmurHash2.cpp" // importar murmurHash
 
